@@ -28,11 +28,11 @@ def frontprop(A,s0,R,Q,choose,opt = 1):
     while rs == 0: 
         mouvs = []
         for a in A: #Cette étape peut rallonger fortement le programme il faudra réflechir à l'enlever 
-            if a(s) != -1:
+            if a(R,Q,A,s) != -1:
                 mouvs.append(a)
         aa = choose(s,R,Q,mouvs,opt)
         lA.append(aa)
-        s = aa(s)
+        s = aa(R,Q,A,s)
         lS.append(s)
         try:
             rs = R[s]
@@ -96,32 +96,32 @@ def chooseBoltz(s,R,Q,A,T):
         if rand < b :
             return a
         
-def chooseEpsilon(s,R,Q,A,opt): # Pas à jour est pas forcément utile 
-    return s
+def chooseEpsilon(s,R,Q,A,opt): # Pas à jour et pas forcément utile 
+    return s 
     
 
 #%% Essai simple 
 l = 3
 
-def haut(s):
+def haut(R,Q,A,s):
     if s < l :
         return -1
     else:
         return s-l
     
-def bas(s):
+def bas(R,Q,A,s):
     if s > (l-1)*l-1 :
         return -1
     else:
         return s+l
     
-def gauche(s):
+def gauche(R,Q,A,s):
     if s%l == 0 :
         return -1
     else:
         return s-1
 
-def droite(s):
+def droite(R,Q,A,s):
     if s%l == l-1 :
         return -1
     else:
@@ -160,50 +160,132 @@ def affiche(Q):
     
 #%% Jeu des batons 
     
-def deux(s): 
+def deux(R,Q,A,s): 
     if s-2 < 1:
         return "d"
     else:
-        e = enemi(s)
+        e = ennemi(R,Q,A,s)
         res = s-2-e
         if res < 1:
             return "v"
         else:
             return res
         
-def un(s): 
+def un(R,Q,A,s): 
     if s-1 < 1:
         return "d"
     else:
-        e = enemi(s)
+        e = ennemi(R,Q,A,s)
         res = s-1-e
         if res < 1:
             return "v"
         else:
             return res
     
-def enemi(s): #Pas a jour !!!
+def ennemi(R,Q,A,s): 
     return rd.randint(1,2)
 
-def enemi_dur(s): #Pas a jour !!!
-    return Q[s].index(max(Q[s])) #Il faut try except Q 
-
-
-def jeuBatons(i): #Pas a jour !!!
+    
+    
+def jeuBatons(training): #marche
     S = ["d",1,2,3,4,5,6,7,8,9,10,11,"v"]
     A = [un,deux]
-    R = {"d" :-100,"v":10}
-    s0 = 11
+    R = {"d" :-1,"v":1}
     Q = {}
-    taux = 0
-    for j in range(i):
-        [lS,lA] = frontprop(S,A,s0,R,Q,chooseExp)
-        Q = backprop(S,A,lS,lA,R,Q,0.5,0.5)
-    for j in range(1000):
-        [lS,lA] = frontprop(S,A,s0,R,Q,chooseWin)
-        taux += lS[-1]/12
-        print(lS)
-        #print([c(k) for k in lA])
-    print(taux/(j+1))
-    return Q
+    s0=11
+    for j in range(training):
+        [lS,lA] = frontprop(A,s0,R,Q,chooseBoltz)
+        Q = backprop(A,lS,lA,R,Q)
+    return (Q,S)
 
+def afficherBatons(Q):
+    for k in range(11,0,-1):
+        try:
+            print(k, ": ", Q[k,un],Q[k,deux])
+        except KeyError:
+            print(k, ": ", "etat non atteignable")
+    return None
+
+
+def tauxVictoire(training):
+    A = [un,deux]
+    R = {"d" :-1,"v":1}
+    Q=jeuBatons(training)[0]
+    taux=0
+    s0=11
+    for i in range(1000):
+        [lS,lA] = frontprop(A,s0,R,Q,chooseMax)
+        if 1 not in lS:
+            taux+=1/10
+    return taux, "% de reussite"
+    
+    
+#%%
+def deux_dur(R,Q,A,s): 
+    if s-2 < 1:
+        return "d"
+    else:
+        e = ennemi_dur(R,Q,A,s-2)
+        res = s-2-e
+        if res < 1:
+            return "v"
+        else:
+            return res
+        
+def un_dur(R,Q,A,s): 
+    if s-1 < 1:
+        return "d"
+    else:
+        e = ennemi_dur(R,Q,A,s-1)
+        res = s-1-e
+        if res < 1:
+            return "v"
+        else:
+            return res
+    
+def ennemi_dur(R,Q,A,s): 
+    try :
+        aa = chooseMax(s,R,Q,A,0)
+        if aa==deux_dur:
+            return 2
+        if aa==un_dur:
+            return 1
+    except KeyError:
+        return rd.randint(1,2)
+    
+
+
+def smartStick(training):
+    S = ["d",1,2,3,4,5,6,7,8,9,10,11,"v"]
+    A = [un_dur,deux_dur]
+    R = {"d" :-2,"v":2}
+    Q = {}
+    s0=11
+    for j in range(training):
+        [lS,lA] = frontprop(A,s0,R,Q,chooseBoltz)
+        Q = backprop(A,lS,lA,R,Q)
+    for j in range(1000):
+        [lS,lA] = frontprop(A,s0,R,Q,chooseMax)
+    return (Q,S)
+
+
+def afficherBatonsDur(Q):
+    for k in range(11,0,-1):
+        try:
+            print(k, ": ", Q[k,un_dur],Q[k,deux_dur])
+        except KeyError:
+            print(k, ": ", "etat non atteignable")
+    return None
+
+def tauxVictoireSmart(training):
+    A = [un_dur,deux_dur]
+    R = {"d" :-1,"v":1}
+    Q=smartStick(training)[0]
+    taux=0
+    s0=11
+    for i in range(1000):
+        [lS,lA] = frontprop(A,s0,R,Q,chooseMax)
+        if 1 not in lS:
+            taux+=1/10
+    return taux, "% de reussite"
+    
