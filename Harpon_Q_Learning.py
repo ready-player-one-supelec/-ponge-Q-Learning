@@ -26,10 +26,11 @@ def frontprop(A,s0,R,Q,choose,opt = 1):
     except KeyError:
         rs = 0 #R n'est pas forcément rempli 
     while rs == 0: 
-        mouvs = []
-        for a in A: #Cette étape peut rallonger fortement le programme il faudra réflechir à l'enlever 
-            if a(R,Q,A,s) != -1:
-                mouvs.append(a)
+        mouvs = A
+        #mouvs = []
+        #for a in A: #Cette étape peut rallonger fortement le programme il faudra réflechir à l'enlever 
+        #    if a(R,Q,A,s) != -1:
+        #        mouvs.append(a)
         aa = choose(s,R,Q,mouvs,opt)
         lA.append(aa)
         s = aa(R,Q,A,s)
@@ -99,7 +100,93 @@ def chooseBoltz(s,R,Q,A,T):
 def chooseEpsilon(s,R,Q,A,opt): # Pas à jour et pas forcément utile 
     return s 
     
+#%% Deep Q Learning 
 
+import Perceptron_Q_Learning as per 
+
+def batch_training(L_inputs,L_th_outputs,reseau,weights,bias,rate,iterations,activation = per.tanh,derivee = per.dtanh): 
+    for k in range(iterations):
+        delta_weight = [weights[k]*0 for k in range(len(weights))]
+        delta_bias = [bias[k]*0 for k in range(len(bias))]
+        for data in range(len(L_inputs)):
+            gw,gb,cost = per.backprop(L_inputs[data],L_th_outputs[data],reseau,weights,bias,activation,derivee)
+            for col in range(len(gw)):
+                delta_weight[col] += gw[col]*rate/len(L_inputs)
+                delta_bias[col] += gb[col]*rate/len(L_inputs)
+        for col in range(len(weights)):
+            weights[col] += -delta_weight[col]
+            bias[col] += -delta_bias[col]  
+    return weights,bias
+
+def phibase(l): #Dans le cas vraiment basique pas besoin de faire de traitement on retient donc les arcs (s,a,r,ss)
+    return l[-1] # apres on pert le corrélation entre les arcs donc c'est plutot mauvais 
+
+def sample(D):
+    rd.shuffle(D)
+    res = []
+    k = 0
+    n = len(D)
+    while k < n and len(res) < 32:
+        if D[k] != []:
+            res.append(D[k])
+    return res
+            
+        
+
+def ajoute(D,elt):
+    D[rd.randin(0,len(D)-1)] = elt
+    return D
+
+def deepQlearning(A,s0,R,choose,memoire,it,neural_it,reseau,Tlim,phi = phibase,gamma = 0.5,rate = 0.001,opt = 0,modify = lambda x: x):
+    reseau.append(len(A))
+    inputs = s0 #A voir  --> Implementation ATARI pour s0
+    (QW,QB) = per.random_w_b(inputs,reseau)
+    D = [[] for i in range(memoire)]
+    for i in range(it):
+        lAS = [s0]
+        s = s0
+        p = phi(lAS)
+        try:
+            r = R[s0]
+        except KeyError:
+            r = 0
+        j = 0 #Evite une boucle inifnie mais doit etre élevé pour ne pas bloquer le jeu 
+        while j<Tlim and abs(r) < 100 :
+            j += 1
+            opt = modify(opt) #opt peut etre tout les arguments suplémentaires odnt on a besoin pour le choix 
+            a = choose(s,R,(QW,QB),A,opt) #Modify permet de faire evoluer opt par exemple si opt = epsilon on peut le faire décroitre... 
+            ss = a(s) #ici on fait l'action --> implementation ATARI
+            lAS = lAS + [a,ss]
+            pp = phi(lAS)
+            try:
+                r = R[ss]
+            except KeyError:
+                r = 0
+            D  = ajoute(D,(p,a,r,pp)) #!!
+            batch = sample(D)
+            inputs = [batch[i][-1] for i in range(len(batch))]
+            y = [0 for k in range(len(batch))] # Calcul de Theorical output 
+            for k in len(batch): # On doit d'abbord calculer les sorties que l'on connait 
+                (sk,ak,rk,ssk) = batch[k]
+                if abs(rk) >= 100:
+                    y[k] = rk
+                else:
+                    maxk = max(per.front_prop(batch,reseau,QW,QB,per.tanh))
+                    y[k] = rk + gamma*maxk
+            front = per.front_prop(inputs,reseau,QW,QB,per.tanh)[-1]
+            for k in len(y) :
+                front[k][A.index(a)] = y[k]
+                y[k] = front
+            (QW,QB) = batch_training(inputs,y,reseau,QW,QB,rate,neural_it)
+            s = ss
+            p = pp
+    return (QW,QB)
+            
+
+
+        
+        
+        
 #%% Essai simple 
 l = 3
 

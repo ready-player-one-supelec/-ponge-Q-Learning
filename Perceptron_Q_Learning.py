@@ -87,6 +87,8 @@ def batch_training(L_inputs,L_th_outputs,reseau,weights,bias,rate,iterations,act
             bias[col] += -delta_bias[col]  
     return weights,bias,error
 
+
+
 def minibatch(L_inputs,L_th_outputs,L_inputs_test,L_th_outputs_test,reseau,weights,bias,rate,iterations,batchsize,activation = sigmoid,derivee = dsigmoid):
     #creation de plus petites listes (minibatchs)
     batchs_L_inputs=[]
