@@ -129,64 +129,209 @@ def sample(D):
     while k < n and len(res) < 32:
         if D[k] != []:
             res.append(D[k])
+        k = k+1
     return res
             
         
 
 def ajoute(D,elt):
-    D[rd.randin(0,len(D)-1)] = elt
+    D[rd.randint(0,len(D)-1)] = elt
     return D
 
-def deepQlearning(A,s0,R,choose,memoire,it,neural_it,reseau,Tlim,phi = phibase,gamma = 0.5,rate = 0.001,opt = 0,modify = lambda x: x):
+# Alors 
+# A est l'ensemble des actions possible (fonctions)
+# s0 est l'état de départ 
+# choose est la fonction de choix qui prends en entrée s R qw QB A et opt opt étant ce que l'on veut
+# R est les resutlats. C'est une fonction : état s --> r(s) Attention il faut faire des try Error a chaque utilisation 
+# memoire est la taille de la liste D  de mémoire des arcs on peut la prendre de l'ordre de 1 milion pour un jeu complexe. 
+# it est le nombre d'apprentissages (arcs --> echec ou reussite) que l'on réalise
+# neural_it est le nombre d'itérations que fait le réseau de neurones a chaque apprentissage
+# reseau est le preceprton voulu sans l'entrée  ni la sortie !!!!!!
+# Tlimest le temps maximum d'un arc ( pour eviter qu'il tourne en boucle ) attention si le jeu tourne encore apres Tlim alors il va se passer un truc louche 
+# phi est la fonction de pré-traitement (s,R,(QW,QB),A,opt)
+
+def deepQlearning(A,s0,R,choose,memoire,it,neural_it,reseau,Tlim = 10e9,phi = phibase,gamma = 0.5,rate = 0.001,opt = 0,modify = lambda x: x):
     reseau.append(len(A))
     inputs = s0 #A voir  --> Implementation ATARI pour s0
     (QW,QB) = per.random_w_b(inputs,reseau)
     D = [[] for i in range(memoire)]
     for i in range(it):
+        print(i)
         lAS = [s0]
         s = s0
         p = phi(lAS)
         try:
-            r = R[s0]
+            r = R(s0)
         except KeyError:
             r = 0
         j = 0 #Evite une boucle inifnie mais doit etre élevé pour ne pas bloquer le jeu 
-        while j<Tlim and abs(r) < 100 :
+        while j<Tlim and abs(r) < 1 : # Etat final 
             j += 1
             opt = modify(opt) #opt peut etre tout les arguments suplémentaires odnt on a besoin pour le choix 
-            a = choose(s,R,(QW,QB),A,opt) #Modify permet de faire evoluer opt par exemple si opt = epsilon on peut le faire décroitre... 
-            ss = a(s) #ici on fait l'action --> implementation ATARI
+            a = choose(p,R,(QW,QB),reseau,A,opt) #Modify permet de faire evoluer opt par exemple si opt = epsilon on peut le faire décroitre... 
+            ss = a(R,(QW,QB),A,s) #ici on fait l'action --> implementation ATARI
             lAS = lAS + [a,ss]
             pp = phi(lAS)
             try:
-                r = R[ss]
+                r = R(ss)
             except KeyError:
                 r = 0
             D  = ajoute(D,(p,a,r,pp)) #!!
             batch = sample(D)
             inputs = [batch[i][-1] for i in range(len(batch))]
             y = [0 for k in range(len(batch))] # Calcul de Theorical output 
-            for k in len(batch): # On doit d'abbord calculer les sorties que l'on connait 
+            for k in range(len(batch)): # On doit d'abbord calculer les sorties que l'on connait 
                 (sk,ak,rk,ssk) = batch[k]
-                if abs(rk) >= 100:
+                if abs(rk) >= 1: #Etat final 
                     y[k] = rk
                 else:
-                    maxk = max(per.front_prop(batch,reseau,QW,QB,per.tanh))
+                    maxk = max(per.front_prop(ssk,reseau,QW,QB,per.tanh)[-1])
                     y[k] = rk + gamma*maxk
-            front = per.front_prop(inputs,reseau,QW,QB,per.tanh)[-1]
-            for k in len(y) :
+            front = [[] for ii in range(len(inputs))] #On crée front pour avoir les valeurs de Q(s,a') pour les a' que l'on ne connait pas 
+            for ii in range(len(inputs)):
+                front[ii] = per.front_prop(inputs[ii],reseau,QW,QB,per.tanh)[-1]
+            for k in range(len(y)) : #On change la forme de y c'est pas l'ideal mais ca a été fait comme ca 
                 front[k][A.index(a)] = y[k]
-                y[k] = front
+                y[k] = front[k]
             (QW,QB) = batch_training(inputs,y,reseau,QW,QB,rate,neural_it)
             s = ss
             p = pp
-    return (QW,QB)
+    print(reseau)
+    return QW,QB
             
 
 
         
         
         
+#%% Jeu des batons 
+
+def deepBatons():
+    A = [un_deep,deux_deep]
+    s0 = [11]
+    memoire = 1000
+    it = 500
+    neural_it = 10
+    reseau = [4,4]
+    QW,QB = deepQlearning(A,s0,R,chooseDeepBaton,memoire,it,neural_it,reseau,Tlim = 10e9,phi = phibase,gamma = 0.6,rate = 0.0001,opt = 0.3,modify = lambda x: x)
+    return QW,QB
+
+def R(p):
+    if p[0] == 0: return -12
+    elif p[0] == 12: return 1
+    else : return 0
+
+
+
+def chooseDeepBaton(p,R,Q,reseau,A,opt):
+    (QW,QB) = Q
+    r = rd.random()
+    if r < opt :
+        rr = rd.randint(0,len(A)-1)
+        return A[rr]
+    else:
+        fp = per.front_prop(p,reseau,QW,QB,per.tanh)[-1]
+        res = fp.argmax()
+        return A[res]
+        
+   
+def deux_deep(R,Q,A,p):
+    s= p[0]
+    if s-2 < 1:
+        return [0]
+    else:
+        e = ennemi(R,Q,A,s)
+        res = s-2-e
+        if res < 1:
+            return [11]
+        else:
+            return [res]
+        
+def un_deep(R,Q,A,p):
+    s = p[0]
+    if s-1 < 1:
+        return [0]
+    else:
+        e = ennemi(R,Q,A,s)
+        res = s-1-e
+        if res < 1:
+            return [12]
+        else:
+            return [res]
+    
+def ennemi(R,Q,A,s): #Stategie gagnante 
+    if s%3 == 1: return rd.randint(1,2)
+    if s%3 == 0: return 2
+    if s%3 == 2: return 1
+    
+
+A,B = deepBatons()
+reseau = [4,4,2]
+print(1)
+print(per.front_prop([1],reseau,A,B,per.tanh)[-1])
+print(2)
+print(per.front_prop([2],reseau,A,B,per.tanh)[-1])
+print(3)
+print(per.front_prop([3],reseau,A,B,per.tanh)[-1])
+print(5)
+print(per.front_prop([5],reseau,A,B,per.tanh)[-1])
+
+#%% 
+def deux(R,Q,A,s):
+    if s-2 < 1:
+        return "d"
+    else:
+        e = ennemi(R,Q,A,s)
+        res = s-2-e
+        if res < 1:
+            return "v"
+        else:
+            return res
+        
+def un(R,Q,A,s): 
+    if s-1 < 1:
+        return "d"
+    else:
+        e = ennemi(R,Q,A,s)
+        res = s-1-e
+        if res < 1:
+            return "v"
+        else:
+            return res    
+    
+def jeuBatons(training): #marche
+    S = ["d",1,2,3,4,5,6,7,8,9,10,11,"v"]
+    A = [un,deux]
+    R = {"d" :-1,"v":1}
+    Q = {}
+    s0=11
+    for j in range(training):
+        [lS,lA] = frontprop(A,s0,R,Q,chooseBoltz)
+        Q = backprop(A,lS,lA,R,Q)
+    return (Q,S)
+
+def afficherBatons(Q):
+    for k in range(11,0,-1):
+        try:
+            print(k, ": ", Q[k,un],Q[k,deux])
+        except KeyError:
+            print(k, ": ", "etat non atteignable")
+    return None
+
+
+def tauxVictoire(training):
+    A = [un,deux]
+    R = {"d" :-1,"v":1}
+    Q=jeuBatons(training)[0]
+    taux=0
+    s0=11
+    for i in range(1000):
+        [lS,lA] = frontprop(A,s0,R,Q,chooseMax)
+        if 1 not in lS:
+            taux+=1/10
+    return taux, "% de reussite"
+    
+
 #%% Essai simple 
 l = 3
 
@@ -245,68 +390,8 @@ def affiche(Q):
 #(Q,S) = test(10000)
 #affiche(Q)
     
-#%% Jeu des batons 
-    
-def deux(R,Q,A,s): 
-    if s-2 < 1:
-        return "d"
-    else:
-        e = ennemi(R,Q,A,s)
-        res = s-2-e
-        if res < 1:
-            return "v"
-        else:
-            return res
-        
-def un(R,Q,A,s): 
-    if s-1 < 1:
-        return "d"
-    else:
-        e = ennemi(R,Q,A,s)
-        res = s-1-e
-        if res < 1:
-            return "v"
-        else:
-            return res
-    
-def ennemi(R,Q,A,s): 
-    return rd.randint(1,2)
-
-    
-    
-def jeuBatons(training): #marche
-    S = ["d",1,2,3,4,5,6,7,8,9,10,11,"v"]
-    A = [un,deux]
-    R = {"d" :-1,"v":1}
-    Q = {}
-    s0=11
-    for j in range(training):
-        [lS,lA] = frontprop(A,s0,R,Q,chooseBoltz)
-        Q = backprop(A,lS,lA,R,Q)
-    return (Q,S)
-
-def afficherBatons(Q):
-    for k in range(11,0,-1):
-        try:
-            print(k, ": ", Q[k,un],Q[k,deux])
-        except KeyError:
-            print(k, ": ", "etat non atteignable")
-    return None
 
 
-def tauxVictoire(training):
-    A = [un,deux]
-    R = {"d" :-1,"v":1}
-    Q=jeuBatons(training)[0]
-    taux=0
-    s0=11
-    for i in range(1000):
-        [lS,lA] = frontprop(A,s0,R,Q,chooseMax)
-        if 1 not in lS:
-            taux+=1/10
-    return taux, "% de reussite"
-    
-    
 #%%
 def deux_dur(R,Q,A,s): 
     if s-2 < 1:

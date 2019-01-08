@@ -28,7 +28,7 @@ human_sets_pause = False
 
 def key_press(key, mod):
     global human_agent_action, human_wants_restart, human_sets_pause
-    # print("pressed key {}".format(key))
+    #print("pressed key {}".format(key))
     key = KEY_TO_ACTION.get(key, 0)
     if key==0xff0d: human_wants_restart = True
     if key==32: human_sets_pause = not human_sets_pause
