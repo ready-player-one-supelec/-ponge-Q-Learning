@@ -12,13 +12,15 @@ import numpy as np
 import random as rd
 import time
 import Perceptron_Q_Learning as per 
-
+import Harpon_Q_Learning as q
 
 env = gym.make('Pong-v0')
 env.reset()
 env.render()
 
 reward_global = 0.0
+
+
 
 def init_game():
 #Initialisation du jeu : les 20 premières frames ne servent à rien
@@ -30,13 +32,14 @@ def init_game():
     # env.close()
     
     state0 = observ_process(observation)
+    return state0
 
 def observ_process(observation): #crops the image and selects the red channel
     observationR=[[0 for k in range(len(observation[0]))] for l in range(34,len(observation)-15)]
     for k in range(34,len(observation)-15):    
         for l in range(len(observation[0])):
             observationR[k-34][l]=observation[k][l][0]
-    return observationR
+    return np.array(observationR).reshape(1,len(observationR)*len(observationR[0]))[0]
 
 def A_up(observation, reward, done, info):
     observation, reward, done, info = env.step(2)
@@ -44,6 +47,13 @@ def A_up(observation, reward, done, info):
     observation, reward, done, info = env.step(env.action_space.sample()) # take a random action (2 is up, 5 is down)
     global reward_global
     reward_global=reward
+    if done :
+        a  = env.reset()
+    while reward != 0 :
+        observation, reward, done, info = env.step(2)
+        env.render()
+        observation, reward, done, info = env.step(5)
+        env.render()
     return observ_process(observation) 
     
 def A_down(observation, reward, done, info):
@@ -51,19 +61,26 @@ def A_down(observation, reward, done, info):
     env.render()
     global reward_global
     reward_global=reward
+    if done :
+        a  = env.reset()
+    while reward != 0 :
+        observation, reward, done, info = env.step(2)
+        env.render()
+        observation, reward, done, info = env.step(5)
+        env.render()
     return observ_process(observation) 
 
 def R(p):
     return reward_global
 
-def deep_pong():
+def deep_pong(state0):
     A = [A_up,A_down]
-    s0 = [state0]
+    s0 = state0
     memoire = 1000
-    it = 5
+    it = 500
     neural_it = 10
-    reseau = [4,4]
-    QW,QB = deepQlearning(A,s0,R,chooseDeepPong,memoire,it,neural_it,reseau,Tlim = 10e9,phi = phibase,gamma = 0.6,rate = 0.0001,opt = 0.3,modify = lambda x: x)
+    reseau = [32,16]
+    QW,QB = q.deepQlearning(A,s0,R,chooseDeepPong,memoire,it,neural_it,reseau,Tlim = 10e9,phi = q.phibase,gamma = 0.6,rate = 0.0001,opt = 0.3,modify = lambda x: x)
     return QW,QB
     
 
@@ -78,7 +95,11 @@ def chooseDeepPong(p,R,Q,reseau,A,opt):
         res = fp.argmax()
         return A[res]
 
-init_game()
+state0 = init_game()
+print(state0)
+print(len(state0))
+W,B = deep_pong(state0)
+
     
 # for _ in range(1000):
 #     if rd.randint(1,2)==1:
