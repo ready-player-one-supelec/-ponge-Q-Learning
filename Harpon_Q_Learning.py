@@ -6,6 +6,7 @@ Created on Tue Dec  4 13:18:27 2018
 """
 import random as rd 
 import numpy as np
+import matplotlib.pyplot as plt 
 
 #%% Programme 
 
@@ -206,19 +207,27 @@ def deepQlearning(A,s0,R,choose,memoire,it,neural_it,reseau,Tlim = 10e9,phi = ph
         
 #%% Jeu des batons 
 
-def deepBatons():
+def deepBatons(it = 50):
     A = [un_deep,deux_deep]
-    s0 = [11]
+    s0 = [1 for i in range(11)]
     memoire = 1000
-    it = 500
     neural_it = 10
-    reseau = [4,4]
-    QW,QB = deepQlearning(A,s0,R,chooseDeepBaton,memoire,it,neural_it,reseau,Tlim = 10e9,phi = phibase,gamma = 0.6,rate = 0.0001,opt = 0.3,modify = lambda x: x)
-    return QW,QB
+    reseau = [8,4]
+    QW,QB = deepQlearning(A,s0,R,chooseDeepBaton,memoire,it,neural_it,reseau,Tlim = 10e9,phi = phibase,gamma = 0.6,rate = 0.0005,opt = 0.8,modify = lambda x: (100*x+0.1)/101)
+    res = 0
+    for i in range(1000):
+        ss = frontprop_deep(A,s0,R,(QW,QB),reseau,chooseDeepBaton,0)[0][-1]
+        if ss[0] == 2:
+            res += 1
+    res = res /1000
+    print(res)
+    return QW,QB,res
+
+        
 
 def R(p):
-    if p[0] == 0: return -12
-    elif p[0] == 12: return 1
+    if p[0] == -1: return -1
+    elif p[0] == 2: return 1
     else : return 0
 
 
@@ -236,45 +245,88 @@ def chooseDeepBaton(p,R,Q,reseau,A,opt):
         
    
 def deux_deep(R,Q,A,p):
-    s= p[0]
+    s= sum(p)
     if s-2 < 1:
-        return [0]
+        return [-1 for i in range(11)]
     else:
         e = ennemi(R,Q,A,s)
         res = s-2-e
         if res < 1:
-            return [11]
+            return [2 for i in range(11)]
         else:
-            return [res]
+            pp = [0 for i in range(11)]
+            for j in range(res):
+                pp[j] = 1
+            return pp
         
 def un_deep(R,Q,A,p):
-    s = p[0]
+    s= sum(p)
     if s-1 < 1:
-        return [0]
+        return [-1 for i in range(11)]
     else:
         e = ennemi(R,Q,A,s)
-        res = s-1-e
+        res = s-1
+        -e
         if res < 1:
-            return [12]
+            return [2 for i in range(11)]
         else:
-            return [res]
+            pp = [0 for i in range(11)]
+            for j in range(res):
+                pp[j] = 1
+            return pp
     
 def ennemi(R,Q,A,s): #Stategie gagnante 
     if s%3 == 1: return rd.randint(1,2)
     if s%3 == 0: return 2
     if s%3 == 2: return 1
     
+#%%
+    
+def frontprop_deep(A,s0,R,Q,reseau,choose,opt = 1): 
+    s = s0
+    lS = [s0]
+    lA = []
+    try:
+        rs = R(s0)
+    except KeyError:
+        rs = 0 #R n'est pas forcément rempli 
+    while rs == 0: 
+        mouvs = A
+        #mouvs = []
+        #for a in A: #Cette étape peut rallonger fortement le programme il faudra réflechir à l'enlever 
+        #    if a(R,Q,A,s) != -1:
+        #        mouvs.append(a)
+        aa = choose(s,R,Q,reseau,mouvs,opt)
+        lA.append(aa)
+        s = aa(R,Q,A,s)
+        lS.append(s)
+        try:
+            rs = R(s)
+        except KeyError:
+            rs = 0
+    return [lS,lA]
 
-A,B = deepBatons()
-reseau = [4,4,2]
+def courbeBaton(nb = 10):
+    res = []
+    for i in range(1,nb):
+        A,B,taux = deepBatons(i*50)
+        res.append(taux)
+    plt.plot(res)
+    return res
+        
+
+A,B,taux = deepBatons(1000)
+#res = courbeBaton(20)
+#%%
+reseau = [8,4,2]
 print(1)
-print(per.front_prop([1],reseau,A,B,per.tanh)[-1])
+print(per.front_prop([1,0,0,0,0,0,0,0,0,0,0],reseau,A,B,per.tanh)[-1])
 print(2)
-print(per.front_prop([2],reseau,A,B,per.tanh)[-1])
+print(per.front_prop([1,1,0,0,0,0,0,0,0,0,0],reseau,A,B,per.tanh)[-1])
 print(3)
-print(per.front_prop([3],reseau,A,B,per.tanh)[-1])
+print(per.front_prop([1,1,1,0,0,0,0,0,0,0,0],reseau,A,B,per.tanh)[-1])
 print(5)
-print(per.front_prop([5],reseau,A,B,per.tanh)[-1])
+print(per.front_prop([1,1,1,1,1,0,0,0,0,0,0],reseau,A,B,per.tanh)[-1])
 
 #%% 
 def deux(R,Q,A,s):

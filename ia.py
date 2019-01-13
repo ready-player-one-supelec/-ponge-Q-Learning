@@ -9,6 +9,8 @@ Created on Tue Jan  8 16:46:06 2019
 import gym
 import time
 import numpy as np
+import random as rd 
+
 env = gym.make('Pong-v0')
 env.reset()
 for _ in range(1000):
