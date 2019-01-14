@@ -99,6 +99,7 @@ state0 = init_game()
 print(state0)
 print(len(state0))
 W,B = deep_pong(state0)
+np.savez_compressed('./save_Q', W=W, B=B)
 
     
 # for _ in range(1000):
