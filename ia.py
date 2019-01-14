@@ -7,6 +7,7 @@ Created on Tue Jan  8 16:46:06 2019
 """
 
 import gym
+from gym import wrappers
 import time
 import numpy as np
 import random as rd
@@ -15,6 +16,7 @@ import Perceptron_Q_Learning as per
 import Harpon_Q_Learning as q
 
 env = gym.make('Pong-v0')
+env = wrappers.Monitor(env, './test_output', video_callable=False, force=True)
 env.reset()
 env.render()
 
