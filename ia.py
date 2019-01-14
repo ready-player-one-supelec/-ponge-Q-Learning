@@ -18,7 +18,7 @@ import Harpon_Q_Learning as q
 env = gym.make('Pong-v0')
 env = wrappers.Monitor(env, './test_output', video_callable=False, force=True)
 env.reset()
-env.render()
+# env.render()
 
 reward_global = 0.0
 
