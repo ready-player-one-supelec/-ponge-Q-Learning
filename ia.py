@@ -77,7 +77,7 @@ def deep_pong(state0):
     A = [A_up,A_down]
     s0 = state0
     memoire = 1000
-    it = 2
+    it = 2000
     neural_it = 10
     reseau = [32,16]
     QW,QB = q.deepQlearning(A,s0,R,chooseDeepPong,memoire,it,neural_it,reseau,Tlim = 10e9,phi = q.phibase,gamma = 0.6,rate = 0.0001,opt = 0.3,modify = lambda x: x)
