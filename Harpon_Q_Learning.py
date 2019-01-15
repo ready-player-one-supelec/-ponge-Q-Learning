@@ -194,6 +194,7 @@ def deepQlearning(A,s0,R,choose,memoire,it,neural_it,reseau,Tlim = 10e9,phi = ph
                 y[k] = front[k]
             tc = time.clock()
             (QW,QB) = batch_training(inputs,y,reseau,QW,QB,rate,neural_it)
+            np.savez_compressed('./save_Q', QW=QW, B=B)
             td = time.clock()
             print("temps 1:" + str(round(abs(100*(ta-tb)))))
             print("temps 2:" + str(round(abs(100*(tc-tb)))))
