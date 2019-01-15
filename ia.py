@@ -99,8 +99,8 @@ state0 = init_game()
 print(state0)
 print(len(state0))
 W,B = deep_pong(state0)
-np.savetxt('./save-W', W)
-np.savetxt('./save-B', B)
+np.save('./save-W', W)
+np.save('./save-B', B)
 
     
 # for _ in range(1000):
