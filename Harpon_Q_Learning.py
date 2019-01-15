@@ -290,10 +290,7 @@ def frontprop_deep(A,s0,R,Q,reseau,choose,opt = 1):
     s = s0
     lS = [s0]
     lA = []
-    try:
-        rs = R(s0)
-    except KeyError:
-        rs = 0 #R n'est pas forcément rempli 
+    rs = 0 
     while rs == 0: 
         mouvs = A
         #mouvs = []
