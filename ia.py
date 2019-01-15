@@ -77,12 +77,15 @@ def A_down(observation, reward, done, info):
 def R(p):
     return reward_global
 
+def modify(x):
+    return (100000*x+0.3)/100001
+
 def deep_pong(state0):
     A = [A_up,A_down]
     s0 = state0
-    reseau = [32,16]
-    QW,QB = q.deepQlearning(A,s0,R,chooseDeepPong,memoire,it,neural_it,reseau,Tlim = 10e9,phi = q.phibase,gamma = 0.6,rate = 0.0001,opt = 0.3,modify = lambda x: x)
-    return QW,QB
+    reseau = [32,32]
+    QW,QB = q.deepQlearning(A,s0,R,chooseDeepPong,memoire,it,neural_it,reseau,Tlim = 10e9,phi = q.phibase,gamma = 0.6,rate = 0.0001,opt = 1,modify = modify)
+    return QW, QB
     
 
 def chooseDeepPong(p,R,Q,reseau,A,opt):
@@ -100,8 +103,17 @@ state0 = init_game()
 print(state0)
 print(len(state0))
 W,B = deep_pong(state0)
-np.save('./save-W', W)
-np.save('./save-B', B)
+#test(W,B)
+
+def test(W= [], B =  []):
+    if W == [] or B == []:
+        W = np.load('./save-W-short.npy')
+        B = np.load('./save-B-short.npy')
+    A = [A_up,A_down]
+    reseau = [32,32,2]
+    for i in range(50):
+            ss = q.frontprop_deep(A,state0,R,(W,B),reseau,chooseDeepPong,0)[0][-1]
+            
 
     
 # for _ in range(1000):
