@@ -16,7 +16,7 @@ import Harpon_Q_Learning as q
 
 env = gym.make('Pong-v0')
 env.reset()
-env.render()
+# env.render()
 
 reward_global = 0.0
 
@@ -25,7 +25,7 @@ reward_global = 0.0
 def init_game():
 #Initialisation du jeu : les 20 premières frames ne servent à rien
     for _ in range(21):
-        env.render()
+        # env.render()
         observation, reward, done, info = env.step(0) # take no action (2 is up, 5 is down)
     #     
     # env.reset()
@@ -43,7 +43,7 @@ def observ_process(observation): #crops the image and selects the red channel
 
 def A_up(observation, reward, done, info):
     observation, reward, done, info = env.step(2)
-    env.render()
+    # env.render()
     observation, reward, done, info = env.step(env.action_space.sample()) # take a random action (2 is up, 5 is down)
     global reward_global
     reward_global=reward
@@ -51,23 +51,23 @@ def A_up(observation, reward, done, info):
         a  = env.reset()
     while reward != 0 :
         observation, reward, done, info = env.step(2)
-        env.render()
+        # env.render()
         observation, reward, done, info = env.step(5)
-        env.render()
+        # env.render()
     return observ_process(observation) 
     
 def A_down(observation, reward, done, info):
     observation, reward, done, info = env.step(5)
-    env.render()
+    # env.render()
     global reward_global
     reward_global=reward
     if done :
         a  = env.reset()
     while reward != 0 :
         observation, reward, done, info = env.step(2)
-        env.render()
+        # env.render()
         observation, reward, done, info = env.step(5)
-        env.render()
+        # env.render()
     return observ_process(observation) 
 
 def R(p):
