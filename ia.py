@@ -110,7 +110,7 @@ state0 = init_game()
 print(state0)
 print(len(state0))
 W,B = deep_pong(state0)
-np.save('./W', w)
+np.save('./W', W)
 np.save('./B', B)
 # test()
 
