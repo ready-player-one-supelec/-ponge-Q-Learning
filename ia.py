@@ -14,26 +14,24 @@ import time
 import Perceptron_Q_Learning as per 
 import Harpon_Q_Learning as q
 
-env = gym.make('Pong-v0')
-env.reset()
-# env.render()
 
 # CONST
-reward_global = 0.0
-it = 2000
-# batch_size = 32
-neural_it = 1
-memoire = 1000000
+from conf import *
+
+env = gym.make('Pong-v0')
+env.reset()
+if render: env.render()
+
 
 
 def init_game():
 #Initialisation du jeu : les 20 premières frames ne servent à rien
     for _ in range(21):
-        # env.render()
+        if render: env.render()
         observation, reward, done, info = env.step(0) # take no action (2 is up, 5 is down)
     #     
-    # env.reset()
-    # env.close()
+    env.reset()
+    env.close()
     
     state0 = observ_process(observation)
     return state0
@@ -47,7 +45,7 @@ def observ_process(observation): #crops the image and selects the red channel
 
 def A_up(observation, reward, done, info):
     observation, reward, done, info = env.step(2)
-    # env.render()
+    if render: env.render()
     observation, reward, done, info = env.step(env.action_space.sample()) # take a random action (2 is up, 5 is down)
     global reward_global
     reward_global=reward
@@ -55,23 +53,23 @@ def A_up(observation, reward, done, info):
         a  = env.reset()
     while reward != 0 :
         observation, reward, done, info = env.step(2)
-        # env.render()
+        if render: env.render()
         observation, reward, done, info = env.step(5)
-        # env.render()
+        if render: env.render()
     return observ_process(observation) 
     
 def A_down(observation, reward, done, info):
     observation, reward, done, info = env.step(5)
-    # env.render()
+    if render: env.render()
     global reward_global
     reward_global=reward
     if done :
         a  = env.reset()
     while reward != 0 :
         observation, reward, done, info = env.step(2)
-        # env.render()
+        if render: env.render()
         observation, reward, done, info = env.step(5)
-        # env.render()
+        if render: env.render()
     return observ_process(observation) 
 
 def R(p):
@@ -99,12 +97,6 @@ def chooseDeepPong(p,R,Q,reseau,A,opt):
         res = fp.argmax()
         return A[res]
 
-state0 = init_game()
-print(state0)
-print(len(state0))
-W,B = deep_pong(state0)
-#test(W,B)
-
 def test(W= [], B =  []):
     if W == [] or B == []:
         W = np.load('./save-W-short.npy')
@@ -113,6 +105,13 @@ def test(W= [], B =  []):
     reseau = [32,32,2]
     for i in range(50):
             ss = q.frontprop_deep(A,state0,R,(W,B),reseau,chooseDeepPong,0)[0][-1]
+
+state0 = init_game()
+print(state0)
+print(len(state0))
+W,B = deep_pong(state0)
+# test()
+
             
 
     
