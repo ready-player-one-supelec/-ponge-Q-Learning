@@ -99,8 +99,8 @@ def chooseDeepPong(p,R,Q,reseau,A,opt):
 
 def test(W= [], B =  []):
     if W == [] or B == []:
-        W = np.load('./save-W-short.npy')
-        B = np.load('./save-B-short.npy')
+        W = np.load('./W.npy')
+        B = np.load('./B.npy')
     A = [A_up,A_down]
     reseau = [32,32,2]
     for i in range(50):
@@ -110,6 +110,8 @@ state0 = init_game()
 print(state0)
 print(len(state0))
 W,B = deep_pong(state0)
+np.save('./W', w)
+np.save('./B', B)
 # test()
 
             
