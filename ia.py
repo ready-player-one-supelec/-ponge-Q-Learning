@@ -43,6 +43,24 @@ def observ_process(observation): #crops the image and selects the red channel
             observationR[k-34][l]=observation[k][l][0]
     return np.array(observationR).reshape(1,len(observationR)*len(observationR[0]))[0]
 
+def A_none(observation, reward, done, info):
+    observation, reward, done, info = env.step(0)
+    if render: env.render()
+    observation, reward, done, info = env.step(env.action_space.sample()) # take a random action (2 is up, 5 is down)
+    global reward_global
+    reward_global=reward
+    if done :
+        a  = env.reset()
+    while reward != 0 :
+        observation, reward, done, info = env.step(0)
+        if render: env.render()
+        observation, reward, done, info = env.step(2)
+        if render: env.render()
+        observation, reward, done, info = env.step(5)
+        if render: env.render()
+    return observ_process(observation) 
+    
+
 def A_up(observation, reward, done, info):
     observation, reward, done, info = env.step(2)
     if render: env.render()
@@ -52,6 +70,8 @@ def A_up(observation, reward, done, info):
     if done :
         a  = env.reset()
     while reward != 0 :
+        observation, reward, done, info = env.step(0)
+        if render: env.render()
         observation, reward, done, info = env.step(2)
         if render: env.render()
         observation, reward, done, info = env.step(5)
@@ -66,6 +86,8 @@ def A_down(observation, reward, done, info):
     if done :
         a  = env.reset()
     while reward != 0 :
+        observation, reward, done, info = env.step(0)
+        if render: env.render()
         observation, reward, done, info = env.step(2)
         if render: env.render()
         observation, reward, done, info = env.step(5)
@@ -79,7 +101,7 @@ def modify(x):
     return (100000*x+0.3)/100001
 
 def deep_pong(state0):
-    A = [A_up,A_down]
+    A = [A_up,A_down,A_none]
     s0 = state0
     reseau = [32,32]
     QW,QB = q.deepQlearning(A,s0,R,chooseDeepPong,memoire,it,neural_it,reseau,Tlim = 10e9,phi = q.phibase,gamma = 0.6,rate = 0.0001,opt = 1,modify = modify)
@@ -112,7 +134,7 @@ print(len(state0))
 W,B = deep_pong(state0)
 np.save('./W', W)
 np.save('./B', B)
-# test()
+test()
 
             
 
