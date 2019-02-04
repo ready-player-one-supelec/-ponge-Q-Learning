@@ -35,6 +35,7 @@ def to_state(observation):
 def point(env):
     reward = 0
     while reward == 0:
+        # TODO: Compute action by Network
         observation, reward, done, info = env.step(env.action_space.sample())
         if render:
             time.sleep(0.01)
@@ -59,10 +60,6 @@ def game(env, played):
 
 # TEST
 init_game(env)
-# for _ in range(1000):
-#     env.step(0)
-#     time.sleep(0.1)
-#     if render: env.render()
 played = 0
 while played < iterations:
     scores, played = game(env, played)
