@@ -27,10 +27,10 @@ def init_game(env):
 
 def to_state(observation):
 # crops the image and selects the red channel
-    observationR=[[0 for k in range(len(observation[0]))] for l in range(34,len(observation)-15)]
-    for k in range(34,len(observation)-15):    
+    observationR=[[0 for k in range(len(observation[0]))] for l in range(35,len(observation)-15)]
+    for k in range(35,len(observation)-15):    
         for l in range(len(observation[0])):
-            observationR[k-34][l]=observation[k][l][0]
+            observationR[k-35][l]=observation[k][l][0]
     return np.array(observationR).reshape(1,len(observationR)*len(observationR[0]))[0]
 
 def point(env, observation):
