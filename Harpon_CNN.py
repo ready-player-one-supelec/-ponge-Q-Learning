@@ -124,7 +124,7 @@ def front_prop(state):
     x_batch = np.array(image).reshape(1, image_size,image_size,num_channels)
     graph = tf.get_default_graph()
     
-    y_pred = graph.get_tensor_by_name("y_pred:0")
+    y_pred = tf.nn.softmax(layer_fc2,name="y_pred")
     
     # Let's feed the images to the input placeholders
     x= graph.get_tensor_by_name("x:0") 
@@ -152,13 +152,7 @@ def back_prop(data): #data is a list of lists : [States, actions, Q-values]
                            y_true: y_true_batch}
  
         session.run(optimizer, feed_dict=feed_dict_tr)
- 
-        if i % int(data.train.num_examples/batch_size) == 0: 
-            val_loss = session.run(cost, feed_dict=feed_dict_val)
-            epoch = int(i / int(data.train.num_examples/batch_size))    
-            
-            show_progress(epoch, feed_dict_tr, feed_dict_val, val_loss)
-            saver.save(session, 'CNN-Pong') 
- 
+
+
  
     
