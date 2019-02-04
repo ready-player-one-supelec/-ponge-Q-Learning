@@ -11,7 +11,7 @@ import time
 import numpy as np
 import random
 
-from conf import render
+from conf import render, iterations
 
 # Initialisation
 env = gym.make('Pong-v0')
@@ -42,19 +42,20 @@ def point(env):
     return reward, done
 
 
-def game(env):
+def game(env, played):
     scores = [0, 0] # (ia, opponent)
     done = False
     while not done:
         reward, done = point(env)
+        played += 1
         if reward == 1:
             scores[0] += 1
         else:
             scores[1] += 1
-        print("IA - opp: {} vs {}".format(scores[0], scores[1]))
+        print("#{:5d}# IA - opp: {:2d} vs {:2d}".format(played, scores[0], scores[1]))
     env.reset()
     print("End game")
-    return scores
+    return scores, played
 
 # TEST
 init_game(env)
@@ -62,4 +63,6 @@ init_game(env)
 #     env.step(0)
 #     time.sleep(0.1)
 #     if render: env.render()
-game(env)
+played = 0
+while played < iterations:
+    scores, played = game(env, played)
