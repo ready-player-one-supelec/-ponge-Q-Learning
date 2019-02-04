@@ -1,5 +1,6 @@
 __pycache__/
 
 save-*
+*.npy
 
 conf.py
