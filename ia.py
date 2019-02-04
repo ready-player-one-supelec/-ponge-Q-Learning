@@ -71,6 +71,20 @@ def A_down(observation, reward, done, info):
         observation, reward, done, info = env.step(5)
         if render: env.render()
     return observ_process(observation) 
+    
+def A_still(observation, reward, done, info):
+    observation, reward, done, info = env.step(0)
+    if render: env.render()
+    global reward_global
+    reward_global=reward
+    if done :
+        a  = env.reset()
+    while reward != 0 :
+        observation, reward, done, info = env.step(2)
+        if render: env.render()
+        observation, reward, done, info = env.step(5)
+        if render: env.render()
+    return observ_process(observation)   
 
 def R(p):
     return reward_global
@@ -79,7 +93,7 @@ def modify(x):
     return (100000*x+0.3)/100001
 
 def deep_pong(state0):
-    A = [A_up,A_down]
+    A = [A_up,A_down,A_still]
     s0 = state0
     reseau = [32,32]
     QW,QB = q.deepQlearning(A,s0,R,chooseDeepPong,memoire,it,neural_it,reseau,Tlim = 10e9,phi = q.phibase,gamma = 0.6,rate = 0.0001,opt = 1,modify = modify)
