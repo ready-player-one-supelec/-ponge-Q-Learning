@@ -58,7 +58,7 @@ def backprop(inputs,th_outputs,reseau,weights,bias,activation = sigmoid,derivee 
 def random_w_b(inputs,reseau):
     weights=[2*np.random.random((len(inputs),reseau[0]))-np.ones((len(inputs),reseau[0]))]+[2*np.random.random((reseau[k],reseau[k+1]))-np.ones((reseau[k],reseau[k+1])) for k in range(len(reseau)-1)]
     bias=[np.zeros(reseau[k]) for k in range(len(reseau))]
-    return weights, bias   
+    return weights, bias
 
 def cost_function(L_inputs,L_th_outputs,reseau,weights,bias,activation=sigmoid):
     cost=0
