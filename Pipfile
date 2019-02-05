@@ -7,9 +7,10 @@ verify_ssl = true
 pylint = "*"
 
 [packages]
-gym = {extras = ["atari"],version = "*"}
+gym = {version = "*",extras = ["atari"]}
 numpy = "*"
 tensorflow = "*"
+matplotlib = "*"
 
 [requires]
 python_version = "3.5"
