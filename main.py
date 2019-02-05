@@ -63,11 +63,12 @@ def point(env, observation):
     observation, reward, done, info = env.step(env.action_space.sample())
     while reward == 0:
         # TODO: Compute action by Network
-        actions = list(per.front_prop(resize(observation),reseau,W,B,per.tanh)[-1])
+        
         if random.random() < exploration_rate:
             action = random.choice(actions_values)
             observation, reward, done, info = env.step(action)
         else:
+            actions = list(per.front_prop(resize(observation),reseau,W,B,per.tanh)[-1])
             action_temp=actions.index(max(actions))
             action = actions_values[action_temp]
             observation, reward, done, info = env.step(action)
@@ -80,6 +81,7 @@ def point(env, observation):
 
 def game(env, played):
     global W,B
+    global exploration_rate
     env.reset()
     init_game(env)
     observation, reward, done, info = env.step(0)
@@ -88,10 +90,12 @@ def game(env, played):
     while not done:
         states_list, actions_list, reward, done = point(env, observation)
         played += 1
+        exploration_rate = max(0.05,exploration_rate**played)
         if reward == 1:
+            
             n=len(states_list)
             for k in range(n):
-                inputs = states_list[n-k]
+                inputs = states_list[n-k-1]
                 actions = per.front_prop(inputs,reseau,W,B,per.tanh)[-1]
                 temp = actions_list[n-k]
                 th_outputs = actions
@@ -124,4 +128,6 @@ init_game(env)
 played = 0
 while played < iterations:
     scores, played = game(env, played)
-    exploration_rate = max(0.1,exploration_rate*exploration_rate)
+    print(str(played) + " is the game number")
+    np.save('./W', W)
+    np.save('./B', B)
