@@ -12,7 +12,8 @@ import numpy as np
 import random as rd
 import time
 import Perceptron_Q_Learning as per 
-import Harpon_Q_Learning as q
+import Harpon_deep_Q as q
+#%%
 
 env = gym.make('Pong-v0')
 env.reset()
@@ -43,7 +44,7 @@ def observ_process(observation): #crops the image and selects the red channel
 
 def A_up(observation, reward, done, info):
     observation, reward, done, info = env.step(2)
-    # env.render()
+    env.render()
     observation, reward, done, info = env.step(env.action_space.sample()) # take a random action (2 is up, 5 is down)
     global reward_global
     reward_global=reward
@@ -51,23 +52,23 @@ def A_up(observation, reward, done, info):
         a  = env.reset()
     while reward != 0 :
         observation, reward, done, info = env.step(2)
-        # env.render()
+        env.render()
         observation, reward, done, info = env.step(5)
-        # env.render()
+        env.render()
     return observ_process(observation) 
     
 def A_down(observation, reward, done, info):
     observation, reward, done, info = env.step(5)
-    # env.render()
+    env.render()
     global reward_global
     reward_global=reward
     if done :
         a  = env.reset()
     while reward != 0 :
         observation, reward, done, info = env.step(2)
-        # env.render()
+        env.render()
         observation, reward, done, info = env.step(5)
-        # env.render()
+        env.render()
     return observ_process(observation) 
 
 def R(p):
@@ -84,7 +85,7 @@ def deep_pong(state0):
     neural_it = 1
     reseau = [32,32]
     QW,QB = q.deepQlearning(A,s0,R,chooseDeepPong,memoire,it,neural_it,reseau,Tlim = 10e9,phi = q.phibase,gamma = 0.6,rate = 0.0001,opt = 1,modify = modify)
-    
+    return QW,QB
 
 def chooseDeepPong(p,R,Q,reseau,A,opt):
     (QW,QB) = Q
@@ -100,15 +101,16 @@ def chooseDeepPong(p,R,Q,reseau,A,opt):
 state0 = init_game()
 print(state0)
 print(len(state0))
-W,B = deep_pong(state0)
-#test(W,B)
+#W,B = deep_pong(state0)
+W = np.load('W.npy')
+B = np.load('B.npy')
+test(W,B)
 
-def test(W= [], B =  []):
-    if W == [] or B == []:
-        W = np.load('./save-W-short.npy')
-        B = np.load('./save-B-short.npy')
+def test(W, B):
+    print("a")
     A = [A_up,A_down]
     reseau = [32,32,2]
+    print("b")
     for i in range(50):
             ss = q.frontprop_deep(A,state0,R,(W,B),reseau,chooseDeepPong,0)[0][-1]
             
