@@ -19,9 +19,10 @@ import Perceptron_Q_Learning as per
 import Harpon_deep_Q as q
 #%%
 
+render = False
 env = gym.make('Pong-v0')
 env.reset()
-# env.render()
+# if render: env.render()
 
 reward_global = 0.0
 
@@ -30,7 +31,7 @@ reward_global = 0.0
 def init_game():
 #Initialisation du jeu : les 20 premières frames ne servent à rien
     for _ in range(21):
-        # env.render()
+        # if render: env.render()
         observation, reward, done, info = env.step(0) # take no action (2 is up, 5 is down)
     #     
     # env.reset()
@@ -83,13 +84,13 @@ def traite(etat,done,reward):
         a  = env.reset()
     if etat[4] == -0.5 and etat[5] == -0.5 :
         toobs, reward, done, info = env.step(2)
-        env.render()
+        if render: env.render()
         if done :
             a  = env.reset()
         if reward != 0 :
             reward_global=reward
         observation, reward, done, info = env.step(5)
-        env.render()
+        if render: env.render()
         if done :
             a  = env.reset()
         if reward != 0 :
@@ -99,11 +100,11 @@ def traite(etat,done,reward):
         return traite(etat,done,reward)
     elif reward != 0 :
         toobs, reward, done, info = env.step(2)
-        env.render()
+        if render: env.render()
         if done :
             a  = env.reset()
         observation, reward, done, info = env.step(5)
-        env.render()
+        if render: env.render()
         if done :
             a  = env.reset()
         obs = observ_process(toobs,toobs)  
@@ -115,7 +116,7 @@ def traite(etat,done,reward):
 
 def A_up(R,Q,A,obs):
     observation, reward, done, info = env.step(2)
-    env.render()
+    if render: env.render()
     global reward_global
     reward_global=reward
     etat = observ_process(observation,obs)
@@ -124,7 +125,7 @@ def A_up(R,Q,A,obs):
     
 def A_down(R,Q,A,obs):
     observation, reward, done, info = env.step(5)
-    env.render()
+    if render: env.render()
     global reward_global
     reward_global=reward
     etat = observ_process(observation,obs)
