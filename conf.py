@@ -1,7 +1,8 @@
-render = True
+render = False
+verbose = False
 iterations = 2000
 # TODO: Decreasing exploration rate
-exploration_rate = 0.3
+exploration_rate = 1
 
 # batch_size = 32
 neural_it = 1
