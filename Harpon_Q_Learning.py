@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import time
 
 
-#%% Programme 
+#%% Programme :
 
 # R doit être un dictionnaire indéxé par les états S.
 # IMPORTANT On peut remplir seulement les valeurs non nulles
