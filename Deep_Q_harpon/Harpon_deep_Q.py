@@ -107,14 +107,14 @@ def deepQlearning(A,s0,R,choose,memoire,it,neural_it,reseau,Tlim = 10e9,phi = ph
                 if abs(rk) >= 1: #Etat final 
                     y[k] = rk #On calcule l'output théorique
                 else:
-                    maxk = max(per.front_prop(ssk,reseau,QW,QB,per.tanh)[-1])
+                    maxk = max(per.front_prop(ssk,reseau,QW,QB,per.tanh)[-1]) #TODO: autre reseau
                     y[k] = rk + gamma*maxk #On calcule l'output théorique
             thOutput = np.array([[0 for jj in range(len(A))] for ii in range(len(inputs))]) #On crée cela pour avoir les valeurs de Q(s,a') pour les a' que l'on ne connait pas 
             for ii in range(len(inputs)):
-                thOutput[ii] = per.front_prop(inputs[ii],reseau,QW,QB,per.tanh)[-1]
+                thOutput[ii] = per.front_prop(inputs[ii],reseau,QW,QB,per.tanh)[-1] #TODO: autre reseau
             for k in range(len(y)) : #On change la forme de y c'est pas l'ideal mais ca a été fait comme ca 
                 thOutput[k][A.index(a)] = y[k]
-            (QW,QB) = batch_training(inputs,thOutput,reseau,QW,QB,rate,neural_it)
+            (QW,QB) = batch_training(inputs,thOutput,reseau,QW,QB,rate,neural_it) #TODO: autre reseau
             #print("temps 1:" + str(round(abs(100*(ta-tb)))))
             #print("temps 2:" + str(round(abs(100*(tc-tb)))))
             #print("temps 3:" + str(round(abs(100*(tc-td)))))
@@ -163,7 +163,7 @@ def chooseDeepBaton(p,R,Q,reseau,A,opt):
         rr = rd.randint(0,len(A)-1)
         return A[rr]
     else:
-        fp = per.front_prop(p,reseau,QW,QB,per.tanh)[-1]
+        fp = per.front_prop(p,reseau,QW,QB,per.tanh)[-1] #TODO: autre reseau
         res = fp.argmax()
         return A[res]
         
