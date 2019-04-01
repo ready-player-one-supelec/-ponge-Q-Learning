@@ -18,9 +18,10 @@ import Perceptron_Q_Learning as per
 import Harpon_deep_Q as q
 #%%
 
+render = False
 env = gym.make('Pong-v0')
 env.reset()
-# env.render()
+# if render: env.render()
 
 reward_global = 0.0
 
@@ -32,7 +33,7 @@ reward_total = 0.0
 def init_game():
 #Initialisation du jeu : les 20 premières frames ne servent à rien
     for _ in range(21):
-        # env.render()
+        # if render: env.render()
         observation, reward, done, info = env.step(0) # take no action (2 is up, 5 is down)
     #     
     # env.reset()
