@@ -14,7 +14,6 @@ import gym
 import time
 import numpy as np
 import random as rd
-import time
 import Perceptron_Q_Learning as per 
 import Harpon_deep_Q as q
 #%%
@@ -25,6 +24,9 @@ env.reset()
 
 reward_global = 0.0
 
+reward_survie = 0.0 #DLC Survie
+
+reward_total = 0.0 
 
 
 def init_game():
@@ -83,13 +85,13 @@ def traite(etat,done,reward):
         a  = env.reset()
     if etat[4] == -0.5 and etat[5] == -0.5 :
         toobs, reward, done, info = env.step(2)
-        env.render()
+        #env.render()
         if done :
             a  = env.reset()
         if reward != 0 :
             reward_global=reward
         observation, reward, done, info = env.step(5)
-        env.render()
+        #env.render()
         if done :
             a  = env.reset()
         if reward != 0 :
@@ -99,11 +101,11 @@ def traite(etat,done,reward):
         return traite(etat,done,reward)
     elif reward != 0 :
         toobs, reward, done, info = env.step(2)
-        env.render()
+        #env.render()
         if done :
             a  = env.reset()
         observation, reward, done, info = env.step(5)
-        env.render()
+        #env.render()
         if done :
             a  = env.reset()
         obs = observ_process(toobs,toobs)  
@@ -115,27 +117,42 @@ def traite(etat,done,reward):
 
 def A_up(R,Q,A,obs):
     observation, reward, done, info = env.step(2)
-    env.render()
+    #env.render()
     global reward_global
+    global reward_survie #DLC Survie
+    global reward_total #DLC Survie
+    reward_survie = reward_survie + 1 #DLC Survie
     reward_global=reward
     etat = observ_process(observation,obs)
     res = traite(etat,done,reward)
+    if reward_global < 0: #DLC Survie
+        reward_survie = 0  #DLC Survie
+        print("reset survie")
+    reward_total = reward_global+ 0.8/(1+np.exp((250-reward_survie)/50))  #DLC Survie
     return  res
     
 def A_down(R,Q,A,obs):
     observation, reward, done, info = env.step(5)
-    env.render()
+    #env.render()
     global reward_global
+    global reward_survie #DLC Survie
+    global reward_total #DLC Survie
+    reward_survie = reward_survie + 1 #DLC Survie
     reward_global=reward
     etat = observ_process(observation,obs)
-    res = traite(etat,done,reward)
+    res = traite(etat,done,reward) 
+    if reward_global < 0: #DLC Survie
+        reward_survie = 0  #DLC Survie
+        print("reset survie")
+    reward_total = reward_global+ 0.8/(1+np.exp((250-reward_survie)/50))  #DLC Survie
     return  res
 
 def R(p):
-    return reward_global
+    #return reward_global #à décomenter
+    return reward_total #DLC survie 
 
 def modify(x):
-    return (100000*x+0.3)/100001
+    return (100000*x+0.1)/100001
 
 def deep_pong(state0):
     A = [A_up,A_down]
@@ -144,7 +161,7 @@ def deep_pong(state0):
     it = 50000
     neural_it = 1
     reseau = [32,32]
-    QW,QB = q.deepQlearning(A,s0,R,chooseDeepPong,memoire,it,neural_it,reseau,Tlim = 10e9,phi = q.phibase,gamma = 0.6,rate = 0.0001,opt = 1,modify = modify)
+    QW,QB = q.deepQlearning(A,s0,R,chooseDeepPong,memoire,it,neural_it,reseau,Tlim = 10e9,phi = q.phibase,gamma = 0.6,rate = 0.0001,opt = 0.3,modify = modify,QW = W,QB = B)
     return QW,QB
 
 def chooseDeepPong(p,R,Q,reseau,A,opt):
@@ -158,16 +175,6 @@ def chooseDeepPong(p,R,Q,reseau,A,opt):
         res = fp.argmax()
         return A[res]
 
-state0 = init_game()
-print(state0)
-print(len(state0))
-W,B = deep_pong(state0)
-np.save("Wsimple",W)
-np.save("Bsimple",B)
-#W = np.load('W.npy')
-#B = np.load('B.npy')
-#test(W,B)
-
 def test(W, B):
     print("a")
     A = [A_up,A_down]
@@ -176,6 +183,20 @@ def test(W, B):
     for i in range(50):
         ss = q.frontprop_deep(A,state0,R,(W,B),reseau,chooseDeepPong,0)[0][-1]
             
+
+
+B,W = [],[]
+state0 = init_game()
+print(state0)
+print(len(state0))
+W,B = deep_pong(state0)
+W = np.load('Wsimple.npy')
+B = np.load('Bsimple.npy')
+np.save("Wsimple",W)
+np.save("Bsimple",B)
+#test(W,B)
+
+
 
     
 # for _ in range(1000):

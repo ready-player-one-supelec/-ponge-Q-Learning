@@ -1,0 +1,143 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Mar 10 16:06:03 2019
+
+@author: odwin
+"""
+import sys
+from interface import *
+from player import Player
+import numpy as np
+import random as rd
+import Perceptron_Q_Learning as per 
+import Harpon_deep_Q_flappy as q
+import time
+
+t = time.time()
+
+global_reward = 0
+
+global_plot = []
+
+def jump(R,Q,A,s,obt):
+    game = obt[1]
+    global global_plot
+    global global_reward
+    action = 1
+    observation, reward, done = game.game_step(action)
+    if done:
+        print("score de la partie: " + str(global_reward))
+        print("")
+        global_plot.append(global_reward)
+        game.reset()
+    if global_reward > 25:
+        print("score de la partie: " + str(global_reward))
+        print("")
+        global_plot.append(global_reward)
+        game.reset()
+        reward = -1 #Valeur arbitraire
+    if reward < 0 :
+        global_reward = reward
+    elif reward > 0:
+        global_reward  += reward
+    else:
+        global_reward = max(global_reward,reward)  
+    return observation
+        
+def fall(R,Q,A,s,obt):
+    game = obt[1]
+    global global_reward
+    global global_plot
+    action = 0
+    observation, reward, done = game.game_step(action)
+    if done:
+        print("score de la partie: " + str(global_reward))
+        print("")
+        global_plot.append(global_reward)
+        game.reset()
+    if global_reward > 25:
+        print("score de la partie: " + str(global_reward))
+        print("")
+        global_plot.append(global_reward)
+        game.reset()
+        reward = -1 #Valeur arbitraire
+    if reward < 0 :
+        global_reward = reward
+    elif reward > 0:
+        global_reward  += reward
+    else:
+        global_reward = max(global_reward,reward)  
+    return observation
+
+def R(p):
+    return global_reward
+
+def fini_flappy(r):
+    global global_reward
+    res = (global_reward < 0)
+    if res :
+        global_reward = 0
+    return res
+
+def modify(x):
+    return [(50000*x[0]+0.1)/50001,x[1]]
+
+
+def chooseExploration(p,R,Q,reseau,A,opt):
+    (QW,QB) = Q
+    r = rd.random()
+    val =  opt [0]
+    if r < val :
+        rr = rd.randint(0,len(A)-1)
+        return A[rr]
+    else:
+        fp = per.front_prop(p,reseau,QW,QB,per.tanh)[-1]
+        res = fp.argmax()
+        return A[res]
+
+def choose_special_flappy(p,R,Q,reseau,A,opt):
+    (QW,QB) = Q
+    r = rd.random()
+    val =  opt [0]
+    if r < val :
+        rand = rd.randint(0,9)
+        if rand == 0:
+            rr = 1
+        else:
+            rr = 0
+        return A[rr]
+    else:
+        fp = per.front_prop(p,reseau,QW,QB,per.tanh)[-1]
+        res = fp.argmax()
+        return A[res]
+
+def deep_flappy(W = [],B = []):
+    global global_reward
+    with Game(display = 0, returnFeatures = 1) as game :
+        s0, reward, done = game.game_step(0)
+        global_reward = reward
+        A = [fall,jump]
+        memoire = 1000
+        it = 10000
+        neural_it = 1
+        reseau = [16,8]
+        obs = [1,game]
+        QW,QB = q.deepQlearning(A,s0,R,choose_special_flappy,memoire,it,neural_it,reseau,fini = fini_flappy,phi = q.phibase,gamma = 0.6,rate = 0.0001,opt = obs,modify = modify,QW = W,QB = B)
+        return QW,QB
+
+
+    
+def test(W, B):
+    global global_reward
+    with Game(display = 1, returnFeatures = 1) as game :
+        A = [fall,jump]
+        reseau = [16,8,2]
+        s0, reward, done = game.game_step(0)
+        obs = [0,game]
+        for i in range(50):
+            ss = q.frontprop_deep(A,s0,R,(W,B),reseau,choose_special_flappy,obs)[0][-1]
+            
+            
+
+Q,W = deep_flappy()

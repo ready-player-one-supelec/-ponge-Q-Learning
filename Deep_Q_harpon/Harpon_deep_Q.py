@@ -32,12 +32,16 @@ def batch_training(L_inputs,L_th_outputs,reseau,weights,bias,rate,iterations,act
 def phibase(l): #Dans le cas vraiment basique pas besoin de faire de traitement on retient donc les arcs (s,a,r,ss)
     return l[-1] # apres on pert le corrélation entre les arcs donc c'est plutot mauvais 
 
-def sample(D):
+def sample(D,Dv):
     res = []
-    for i in range(32):
+    for i in range(16):
         elt = D[rd.randint(0,len(D)-1)]
         if elt != []:
             res.append(elt)
+    for i in range(16): #DLC ajout du vecteur de victoire 
+        elt = Dv[rd.randint(0,len(Dv)-1)] #DLC ajout du vecteur de victoire 
+        if elt != []: #DLC ajout du vecteur de victoire 
+            res.append(elt)   #DLC ajout du vecteur de victoire 
     return res
             
         
@@ -58,20 +62,22 @@ def ajoute(D,elt):
 # Tlimest le temps maximum d'un arc ( pour eviter qu'il tourne en boucle ) attention si le jeu tourne encore apres Tlim alors il va se passer un truc louche 
 # phi est la fonction de pré-traitement (s,R,(QW,QB),A,opt)
 
-def deepQlearning(A,s0,R,choose,memoire,it,neural_it,reseau,Tlim = 10e9,phi = phibase,gamma = 0.5,rate = 0.001,opt = 0,modify = lambda x: x):
+def deepQlearning(A,s0,R,choose,memoire,it,neural_it,reseau,Tlim = 10e9,phi = phibase,gamma = 0.5,rate = 0.001,opt = 0,modify = lambda x: x,QW = [],QB = []):
     reseau.append(len(A))
     inputs = s0 #A voir  --> Implementation ATARI pour s0
-    (QW,QB) = per.random_w_b(inputs,reseau)
+    if QW == []:
+        (QW,QB) = per.random_w_b(inputs,reseau)
     D = [[] for i in range(memoire)]
+    Dv = [[] for i in range(memoire)] #DLC ajout du vecteur de victoire 
     for i in range(it):
-        print(i)
-        print("exploration: "+str(opt))
+        print("Partie numéro: "+  str(i))
+        print("exploration: "+str(round(opt,3)))
         lAS = [s0]
         s = s0
         p = phi(lAS)
         r = 0
         j = 0 #Evite une boucle inifnie mais doit etre élevé pour ne pas bloquer le jeu 
-        while j<Tlim and abs(r) < 1 : # Etat final 
+        while j<Tlim and r >= 0 : # Etat final 
             j += 1
             opt = modify(opt) #opt peut etre tout les arguments suplémentaires odnt on a besoin pour le choix 
             a = choose(p,R,(QW,QB),reseau,A,opt) #Modify permet de faire evoluer opt par exemple si opt = epsilon on peut le faire décroitre... 
@@ -82,8 +88,15 @@ def deepQlearning(A,s0,R,choose,memoire,it,neural_it,reseau,Tlim = 10e9,phi = ph
                 r = R(ss)
             except KeyError:
                 r = 0
+            if r == 1 : #DLC ajout du vecteur de victoire
+                sv = lAS[0] #DLC ajout du vecteur de victoire
+                for i in range(1,len(lAS)//2): #DLC ajout du vecteur de victoire
+                    ssv = lAS[2*i]  #DLC ajout du vecteur de victoire
+                    av = lAS[2*i-1]  #DLC ajout du vecteur de victoire
+                    rv = 1*(len(lAS)-2*i)/len(lAS)
+                    Dv = ajoute(Dv,np.array([sv,av,rv,ssv]))  #DLC ajout du vecteur de victoire
             D  = ajoute(D,np.array([p,a,r,pp])) #!!
-            batch = sample(D) #On eslectione des arcs pour apprendre 
+            batch = sample(D,Dv) #On eslectione des arcs pour apprendre 
             inputs = [batch[i][0] for i in range(len(batch))] #La seule partie qui nous interesse pour les inputs c'est l'arrivée 
             y = [0 for k in range(len(batch))] # Calcul de Theorical output Initialisation
             for k in range(len(batch)): # On doit d'abbord calculer les sorties que l'on connait 
