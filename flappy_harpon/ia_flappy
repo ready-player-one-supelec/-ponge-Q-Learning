@@ -10,6 +10,7 @@ from interface import *
 from player import Player
 import numpy as np
 import random as rd
+import matplotlib.pyplot as plt 
 import Perceptron_Q_Learning as per 
 import Harpon_deep_Q_flappy as q
 import time
@@ -20,20 +21,47 @@ global_reward = 0
 
 global_plot = []
 
+global_moyennes = [[557, 0, 369],[350,67],[305,192],[14,-1.5],[375,100],[405,300]]
+
+testlist = [[] for i in range(6)]
+
+'''
+On obtient moyennes de manière experimentale 
+On pourrait le faire proprement mais je n'ai pas les données poue le faire  et je ne suis pas sur que cela marcherait mieux 
+testlist = [[0,0,0,999999] for i in range(6)]
+moy = [[testlist[i][0],testlist[i][-1],testlist[i][1]/testlist[i][2]] for i in range(6)]
+[[557.0, 0.0, 368.63851174934723],
+ [347.7999267578125, -42.20002746582031, 67.2985975738605],
+ [302.20001220703125, -87.79995727539062, 192.70140249718781],
+ [13.999995231628418, -3.5999999046325684, -1.4796341960519692],
+ [374.7999572753906, -3.5999984741210938, 99.2433755400712],
+ [403.6000061035156, 25.200042724609375, 300.7566243423183]]
+
+[[557.0, 422.2176935986574],
+ [260.7999572753906, 58.12990837673351],
+ [301.8000183105469, 201.8700915610753],
+ [12.799996376037598, -2.0442577275554545],
+ [296.7999572753906, 90.31559516278367],
+ [403.6000061035156, 309.684404682753]]
+'''
+def add(res):
+    global testlist 
+    for i in range(len(res)):
+        testlist[i].append(res[i])
+
 def jump(R,Q,A,s,obt):
     game = obt[1]
     global global_plot
+    global global_moyennes
     global global_reward
     action = 1
     observation, reward, done = game.game_step(action)
     if done:
         print("score de la partie: " + str(global_reward))
-        print("")
         global_plot.append(global_reward)
         game.reset()
     if global_reward > 25:
         print("score de la partie: " + str(global_reward))
-        print("")
         global_plot.append(global_reward)
         game.reset()
         reward = -1 #Valeur arbitraire
@@ -42,23 +70,24 @@ def jump(R,Q,A,s,obt):
     elif reward > 0:
         global_reward  += reward
     else:
-        global_reward = max(global_reward,reward)  
-    return observation
+        global_reward = max(global_reward,reward) 
+    result = [(observation[i] - global_moyennes[i][1])/global_moyennes[i][0] for i in range(len(observation))]
+    add(result)
+    return result
         
 def fall(R,Q,A,s,obt):
     game = obt[1]
     global global_reward
+    global global_moyennes
     global global_plot
     action = 0
     observation, reward, done = game.game_step(action)
     if done:
         print("score de la partie: " + str(global_reward))
-        print("")
         global_plot.append(global_reward)
         game.reset()
     if global_reward > 25:
         print("score de la partie: " + str(global_reward))
-        print("")
         global_plot.append(global_reward)
         game.reset()
         reward = -1 #Valeur arbitraire
@@ -68,7 +97,9 @@ def fall(R,Q,A,s,obt):
         global_reward  += reward
     else:
         global_reward = max(global_reward,reward)  
-    return observation
+    result = [(observation[i] - global_moyennes[i][1])/global_moyennes[i][0] for i in range(len(observation))]
+    add(result)
+    return result
 
 def R(p):
     return global_reward
@@ -119,11 +150,11 @@ def deep_flappy(W = [],B = []):
         global_reward = reward
         A = [fall,jump]
         memoire = 1000
-        it = 10000
+        it = 50
         neural_it = 1
         reseau = [16,8]
-        obs = [1,game]
-        QW,QB = q.deepQlearning(A,s0,R,choose_special_flappy,memoire,it,neural_it,reseau,fini = fini_flappy,phi = q.phibase,gamma = 0.6,rate = 0.0001,opt = obs,modify = modify,QW = W,QB = B)
+        obs = [0.2,game]
+        QW,QB = q.deepQlearning(A,s0,R,choose_special_flappy,memoire,it,neural_it,reseau,fini = fini_flappy,phi = q.phibase,gamma = 0.6,rate = 0.001,opt = obs,modify = modify,QW = W,QB = B)
         return QW,QB
 
 

@@ -69,6 +69,7 @@ def fini_base(R,opt,opt2):
 
 def deepQlearning(A,s0,R,choose,memoire,it,neural_it,reseau,fini = fini_base,phi = phibase,gamma = 0.5,rate = 0.001,opt = 0,modify = lambda x: x,QW = [],QB = []):
     Tlim = 10e9 
+    timer = [0,0,0]
     reseau.append(len(A))
     inputs = s0 #A voir  --> Implementation ATARI pour s0
     if QW == []:
@@ -76,6 +77,15 @@ def deepQlearning(A,s0,R,choose,memoire,it,neural_it,reseau,fini = fini_base,phi
     D = [[] for i in range(memoire)]
     Dv = [[] for i in range(memoire)] #DLC ajout du vecteur de victoire 
     for i in range(it):
+        if timer[0] != 0:
+            timea = np.round(timer[1]/(timer[0]+timer[1]+timer[2])*100)
+            timeb = np.round(timer[0]/(timer[0]+timer[1]+timer[2])*100)
+            timec = np.round(timer[2]/(timer[0]+timer[1]+timer[2])*100)
+            print("temps d'apprentissage: "+str(timea)+" % ")
+            print("temps 1 : "+str(timeb)+" % ")
+            print("temps 2 : "+str(timec)+" % ")
+            timer = [0,0,0]
+        print(" ")
         print("Partie numéro: "+  str(i))
         print("exploration: "+str(round(opt[0],3)))
         lAS = [s0]
@@ -103,6 +113,7 @@ def deepQlearning(A,s0,R,choose,memoire,it,neural_it,reseau,fini = fini_base,phi
 #                     rv = 1*(len(lAS)-2*i)/len(lAS) #DLC ajout du vecteur de victoire
 #                     Dv = ajoute(Dv,np.array([sv,av,rv,ssv]))  #DLC ajout du vecteur de victoire
 # =============================================================================
+            ta = time.clock()
             D  = ajoute(D,np.array([p,a,r,pp])) #!!
             batch = sample(D,Dv) #On eslectione des arcs pour apprendre 
             inputs = [batch[i][0] for i in range(len(batch))] #La seule partie qui nous interesse pour les inputs c'est l'arrivée 
@@ -117,16 +128,18 @@ def deepQlearning(A,s0,R,choose,memoire,it,neural_it,reseau,fini = fini_base,phi
                 else:
                     maxk = max(per.front_prop(ssk,reseau,QW,QB,per.tanh)[-1])
                     y[k] = rk + gamma*maxk #On calcule l'output théorique
+            tb = time.clock()
             thOutput = np.array([[0 for jj in range(len(A))] for ii in range(len(inputs))]) #On crée cela pour avoir les valeurs de Q(s,a') pour les a' que l'on ne connait pas 
             for ii in range(len(inputs)):
                 thOutput[ii] = per.front_prop(inputs[ii],reseau,QW,QB,per.tanh)[-1]
             for k in range(len(y)) : #On change la forme de y c'est pas l'ideal mais ca a été fait comme ca 
                 thOutput[k][A.index(a)] = y[k]
+            tc = time.clock()
             (QW,QB) = batch_training(inputs,thOutput,reseau,QW,QB,rate,neural_it)
-            #print("temps 1:" + str(round(abs(100*(ta-tb)))))
-            #print("temps 2:" + str(round(abs(100*(tc-tb)))))
-            #print("temps 3:" + str(round(abs(100*(tc-td)))))
-            #print("")
+            td = time.clock()
+            timer[0] += tb - ta
+            timer[1] += tc - tb
+            timer[2] += td - tc
             s = ss
             p = pp
     print(reseau)

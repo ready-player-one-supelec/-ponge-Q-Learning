@@ -86,13 +86,13 @@ def traite(etat,done,reward):
         a  = env.reset()
     if etat[4] == -0.5 and etat[5] == -0.5 :
         toobs, reward, done, info = env.step(2)
-        #env.render()
+        env.render()
         if done :
             a  = env.reset()
         if reward != 0 :
             reward_global=reward
         observation, reward, done, info = env.step(5)
-        #env.render()
+        env.render()
         if done :
             a  = env.reset()
         if reward != 0 :
@@ -102,11 +102,11 @@ def traite(etat,done,reward):
         return traite(etat,done,reward)
     elif reward != 0 :
         toobs, reward, done, info = env.step(2)
-        #env.render()
+        env.render()
         if done :
             a  = env.reset()
         observation, reward, done, info = env.step(5)
-        #env.render()
+        env.render()
         if done :
             a  = env.reset()
         obs = observ_process(toobs,toobs)  
@@ -118,7 +118,7 @@ def traite(etat,done,reward):
 
 def A_up(R,Q,A,obs):
     observation, reward, done, info = env.step(2)
-    #env.render()
+    env.render()
     global reward_global
     global reward_survie #DLC Survie
     global reward_total #DLC Survie
@@ -134,7 +134,7 @@ def A_up(R,Q,A,obs):
     
 def A_down(R,Q,A,obs):
     observation, reward, done, info = env.step(5)
-    #env.render()
+    env.render()
     global reward_global
     global reward_survie #DLC Survie
     global reward_total #DLC Survie
@@ -186,15 +186,21 @@ def test(W, B):
             
 
 
-B,W = [],[]
+#B,W = [],[]
 state0 = init_game()
 print(state0)
 print(len(state0))
-W,B = deep_pong(state0)
-W = np.load('Wsimple.npy')
-B = np.load('Bsimple.npy')
-np.save("Wsimple",W)
-np.save("Bsimple",B)
+#W,B = deep_pong(state0)
+W = np.load('W.npy')
+B = np.load('B.npy')
+W2 = np.load('W2.npy')
+B2 = np.load('B2.npy')
+Wsimple = np.load('Wsimple.npy')
+Bsimple = np.load('Bsimple.npy')
+Wsimple2 = np.load('Wsimple2.npy')
+Bsimple2 = np.load('Bsimple2.npy')
+#np.save("Wsimple",W)
+#np.save("Bsimple",B)
 #test(W,B)
 
 
