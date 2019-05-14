@@ -326,7 +326,7 @@ print(state0)
 deep_pong(state0)
 saver.save(sess, 'my_test_model')
 
-#%% test une fois entrainé
+#%% test une fois entrainé (NON UTILISE)
     
 def frontprop_deep(A,s0,choose,opt,sess): 
     s = s0
