@@ -311,11 +311,10 @@ def traite(etat,done,reward):
 
 
 #%% entrainement
-def deep_pong(state0):
+def deep_pong(state0,it):
     A = [A_up,A_down]
     s0 = state0
     memoire = 1000
-    it = 5000
     deepQlearning2(A,s0,R,chooseDeepPong,memoire,it)
     return('ni')
 
@@ -323,7 +322,7 @@ def deep_pong(state0):
 
 state0 = init_game()
 print(state0)
-deep_pong(state0)
+deep_pong(state0,30000)
 saver.save(sess, 'my_test_model')
 
 #%% test une fois entrainé (NON UTILISE)
@@ -359,7 +358,6 @@ def test(sess):
                 
 
 
-##test(W,B)
 #
 #
 #
