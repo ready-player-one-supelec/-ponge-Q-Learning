@@ -59,6 +59,8 @@ Optimizer = tf.train.AdamOptimizer(learning_rate).minimize(Loss,var_list=[Weight
 #accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 Accuracy = 1-Loss
 
+saver=tf.train.Saver()
+
 #%% Q learning
 env = gym.make('Pong-v0' if len(sys.argv)<2 else sys.argv[1])
 
@@ -317,9 +319,12 @@ def deep_pong(state0):
     deepQlearning2(A,s0,R,chooseDeepPong,memoire,it)
     return('ni')
 
+#%% partie a executer
+
 state0 = init_game()
 print(state0)
 deep_pong(state0)
+saver.save(sess, 'my_test_model')
 
 #%% test une fois entrainé
     
@@ -353,12 +358,7 @@ def test(sess):
     return lss
                 
 
-#%% save
-#B,W = [],[]
-#W = np.load('Wsimple.npy')
-#B = np.load('Bsimple.npy')
-#np.save("Wsimple",W)
-#np.save("Bsimple",B)
+
 ##test(W,B)
 #
 #
@@ -374,10 +374,3 @@ def test(sess):
 #
 #env.reset()
 #env.close()
-
-#%%
-    
-x=1
-for k in range(10000):
-    x=modify(x)
-print(x)
