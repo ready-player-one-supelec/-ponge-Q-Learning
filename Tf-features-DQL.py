@@ -154,7 +154,7 @@ def phibase(l): #Dans le cas vraiment basique pas besoin de faire de traitement 
 #
 #%% fonction principale
 
-def deepQlearning2(A,s0,R,choose,memoire,it,gamma = 0.5,opt = 0.8):
+def deepQlearning2(A,s0,R,choose,memoire,it,gamma = 0.5):
     global sess
     inputs = s0 #A voir  --> Implementation ATARI pour s0
     sess.run(tf.global_variables_initializer())
