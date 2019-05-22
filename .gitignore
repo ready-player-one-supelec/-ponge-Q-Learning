@@ -1,5 +1,12 @@
 __pycache__/
-
+.vscode
 save-*
 
 conf.py
+
+*.npy
+*.index
+*.meta
+*.data-*
+*.txt
+checkpoint
