@@ -1,4 +1,4 @@
 # Harpon_Q_Learning
 
-
-Sacha si tu ne crée pas de branche et que tu commit sur master j'annulerais tes commit. Merci
+Code du projet Ready-Player-One de l'Ã©quipe Harpon,
+Partie Q-learning et deep Q-learning
