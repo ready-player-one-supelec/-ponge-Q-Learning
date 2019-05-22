@@ -111,7 +111,8 @@ def A_down(obs):
 def modify(x):
     return (100000*x+0.3)/100001
 
- 
+ Def modify_exp(it,it_max):
+    Return 0.6*np.exp(-3*it/it_max)+0.2
 
 def chooseDeepPong(p,A,opt,sess):
     r = np.random.rand()
@@ -166,8 +167,9 @@ def deepQlearning2(A,s0,R,choose,memoire,it,gamma = 0.5,opt = 0.8):
         lAS = [s0]
         s = s0
         r = 0 
+        opt = modify_exp(i,it)
         while np.abs(r) < 0.9 : # Etat final
-            opt = modify(opt) #opt peut etre tout les arguments suplémentaires odnt on a besoin pour le choix 
+            
             a = choose(s,A,opt,sess) #Modify permet de faire evoluer opt par exemple si opt = epsilon on peut le faire décroitre... 
             ss = a(s) #ici on fait l'action --> implementation ATARI
             lAS = lAS + [a,ss]
