@@ -16,7 +16,7 @@ import Harpon_Q_Learning as q
 
 
 # CONST
-from conf import *
+#from conf import *
 
 env = gym.make('Pong-v0')
 env.reset()

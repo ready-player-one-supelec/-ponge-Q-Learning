@@ -138,7 +138,6 @@ def ajoute(D,elt):
     D[rd.randint(0,len(D)-1)] = elt
     return D
 
-# Alors 
 # A est l'ensemble des actions possible (fonctions)
 # s0 est l'état de départ 
 # choose est la fonction de choix qui prends en entrée s R qw QB A et opt opt étant ce que l'on veut
