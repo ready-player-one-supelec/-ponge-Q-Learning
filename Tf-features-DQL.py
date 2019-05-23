@@ -11,7 +11,6 @@ import numpy as np
 import gym
 import sys
 
-
 sess=tf.InteractiveSession()
 
 ## Defining various initialization parameters for 784-512-256-10 MLP model
@@ -59,6 +58,7 @@ Optimizer = tf.train.AdamOptimizer(learning_rate).minimize(Loss,var_list=[Weight
 #accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 Accuracy = 1-Loss
 
+saver = tf.train.Saver()
 #%% Q learning
 env = gym.make('Pong-v0' if len(sys.argv)<2 else sys.argv[1])
 
@@ -309,19 +309,23 @@ def traite(etat,done,reward):
 
 
 #%% entrainement
-def deep_pong(state0):
+def deep_pong(state0,it):
     A = [A_up,A_down]
     s0 = state0
     memoire = 1000
-    it = 5000
     deepQlearning2(A,s0,R,chooseDeepPong,memoire,it)
     return('ni')
 
+#%% partie a executer
 state0 = init_game()
-print(state0)
-deep_pong(state0)
+deep_pong(state0,100)
+saver.save(sess, 'my_test_model')
 
-#%% test une fois entrainé
+#%% restorer une sauvegarde précedente 
+
+
+
+#%% test une fois entrainé (NON UTILISE)
     
 def frontprop_deep(A,s0,choose,opt,sess): 
     s = s0
@@ -374,10 +378,3 @@ def test(sess):
 #
 #env.reset()
 #env.close()
-
-#%%
-    
-x=1
-for k in range(10000):
-    x=modify(x)
-print(x)
