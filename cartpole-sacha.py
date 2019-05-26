@@ -9,9 +9,6 @@ Created on Mon Apr  8 23:30:33 2019
 import tensorflow as tf
 import numpy as np
 import gym
-import sys
-import time
-import matplotlib.pyplot as plt
 
 
 sess=tf.InteractiveSession()
@@ -22,13 +19,11 @@ Num_output = 2
 Num_layers_0 = 32
 Num_layers_1 = 32
 starter_learning_rate = 0.001
-dropout_prob = 0.5
 
 # Placeholders for the input data
 Input_X = tf.placeholder('float32',shape =(None,Num_classes),name="Input_X")
 Input_Y = tf.placeholder('float32',shape = (None,Num_output),name='Input_Y')
 ## for dropout layer
-keep_prob = tf.placeholder(tf.float32)
 
 
 #initialising biases and weights
@@ -42,19 +37,17 @@ Bias_2 = tf.Variable(tf.random_normal([Num_output]))
 
 ## Initializing network
 Hidden_output_0 = tf.nn.tanh(tf.matmul(Input_X,Weights_0)+Bias_0)
-Hidden_output_0_0 = tf.nn.dropout(Hidden_output_0, keep_prob)
-Hidden_output_1 = tf.nn.tanh(tf.matmul(Hidden_output_0_0,Weights_1)+Bias_1)
-Hidden_output_1_1 = tf.nn.dropout(Hidden_output_1, keep_prob)
-Predicted_y = tf.nn.tanh(tf.matmul(Hidden_output_1_1,Weights_2) + Bias_2)
+Hidden_output_1 = tf.nn.tanh(tf.matmul(Hidden_output_0,Weights_1)+Bias_1)
+Predicted_y = tf.nn.tanh(tf.matmul(Hidden_output_1,Weights_2) + Bias_2)
 
 ## Defining the loss function (quadratic)
 Loss=tf.losses.mean_squared_error(Input_Y,Predicted_y)
 
 ## Variable learning rate
-learning_rate = tf.train.exponential_decay(starter_learning_rate, 0, 1000, 0.95, staircase=True)
+#learning_rate = tf.train.exponential_decay(starter_learning_rate, 0, 1000, 0.95, staircase=True)
 
 ## Adam optimzer for finding the right weight
-Optimizer = tf.train.AdamOptimizer(learning_rate).minimize(Loss,var_list=[Weights_0,Weights_1,Weights_2,Bias_0,Bias_1,Bias_2])
+Optimizer = tf.train.AdamOptimizer(starter_learning_rate).minimize(Loss,var_list=[Weights_0,Weights_1,Weights_2,Bias_0,Bias_1,Bias_2])
 
 ## Metrics definition
 #correct_prediction = tf.equal(tf.argmax(y_train,1), tf.argmax(predicted_y,1))
@@ -111,83 +104,61 @@ def A_right(obs, score):
     return res
 
 
-def modify(x):
-    return x - 0.8/30000
-
  
+def modify_exp(it,it_max):
+    return 0.6*np.exp(-3*it/it_max)+0.2
 
-def chooseDeepPong(p,A,opt,sess):
+
+def chooseDeep(p,A,opt,sess):
     r = np.random.rand()
     if r < opt :
         rr = np.random.randint(len(A)-1)
         return A[rr]
     else:
-        fp = sess.run(Predicted_y, {Input_X: [p], keep_prob: 1})
+        fp = sess.run(Predicted_y, {Input_X: [p]})
         res = fp.argmax()
     return A[res]
 
 
 
-def sample(D,Dv):
+def sample(D):
     res = []
     for i in range(32):
-        elt = D[np.random.randint(len(D)-1)]
+        elt = D[np.random.randint(len(D))]
         if elt != []:
             res.append(elt)
-# =============================================================================
-#     for i in range(16): #DLC ajout du vecteur de victoire 
-#         elt = Dv[rd.randint(0,len(Dv)-1)] #DLC ajout du vecteur de victoire 
-#         if elt != []: #DLC ajout du vecteur de victoire 
-#             res.append(elt)   #DLC ajout du vecteur de victoire 
-# =============================================================================
     return res
             
         
-
-def ajoute(D,elt):
-    D[np.random.randint(len(D)-1)] = elt
-    return D
-
-
-def phibase(l): #Dans le cas vraiment basique pas besoin de faire de traitement on retient donc les arcs (s,a,r,ss)
-    return l[-1] # apres on pert le corrélation entre les arcs donc c'est plutot mauvais 
 
 
 #
 #%% fonction principale
 
-def deepQlearning2(A,s0,R,choose,memoire,it,gamma = 0.5,opt = 0.8):
+def deepQlearning2(A,s0,R,choose,memoire,it,gamma = 0.5):
     scores = []
-    global sess
     inputs = s0 #A voir  --> Implementation ATARI pour s0
     sess.run(tf.global_variables_initializer())
     D = [[] for i in range(memoire)]
-    Dv = [[] for i in range(memoire)] #DLC ajout du vecteur de victoire 
     for i in range(it):
         print(" ")
+        opt=modify_exp(i,it)
         print("Partie numéro: "+  str(i))
         print("exploration: "+str(round(opt,4)))
         score = 0
         lAS = [s0]
         s = s0
-        r = 0 
+        r = 0
         while np.abs(r) < 0.9 : # Etat final
-            opt = modify(opt) #opt peut etre tout les arguments suplémentaires odnt on a besoin pour le choix 
             a = choose(s,A,opt,sess) #Modify permet de faire evoluer opt par exemple si opt = epsilon on peut le faire décroitre... 
             ss = a(s, score) #ici on fait l'action --> implementation ATARI
             lAS = lAS + [a,ss]
             r = R(ss)
-# =============================================================================
-#             if r == 1 : #DLC ajout du vecteur de victoire
-#                 sv = lAS[0] #DLC ajout du vecteur de victoire
-#                 for i in range(1,len(lAS)//2): #DLC ajout du vecteur de victoire
-#                     ssv = lAS[2*i]  #DLC ajout du vecteur de victoire
-#                     av = lAS[2*i-1]  #DLC ajout du vecteur de victoire
-#                     rv = 1*(len(lAS)-2*i)/len(lAS)
-#                     Dv = ajoute(Dv,np.array([sv,av,rv,ssv]))  #DLC ajout du vecteur de victoire
-# =============================================================================
-            D  = ajoute(D,np.array([s,a,r,ss])) #!!
-            batch = sample(D,Dv) #On eslectione des arcs pour apprendre
+            if [] in D:
+                D[D.index([])]=np.array([s,a,r,ss])#si la mémoire n'est pas pleine, on ajoute en mémoire
+            else:
+                D[np.random.randint(len(D)-1)] = np.array([s,a,r,ss])#si elle est pleine on remplace aléatoirement
+            batch = sample(D) #On eslectione des arcs pour apprendre
             thOutput = np.array([[0 for jj in range(len(A))] for ii in range(len(batch))])
             inputs = np.array([s for ii in range(len(batch))]) #On initialise les inputs qui vont etre les s du batch ( ici s sert uniquement a donner la taille )
             thAk = 0 #Initialisation de la variable 
@@ -198,20 +169,19 @@ def deepQlearning2(A,s0,R,choose,memoire,it,gamma = 0.5,opt = 0.8):
                 rk= batch[k][2]
                 ssk = batch[k][3] #On récupère les données du batch 
                 #On va céer les valeurs de Q(s,a') pour les a' que l'on ne connait pas 
-                thOutput[k] = sess.run(Predicted_y, {Input_X:[sk], keep_prob:1}) #TODO: autre reseau 
+                thOutput[k] = sess.run(Predicted_y, {Input_X:[sk]}) #TODO: autre reseau 
                 #Parmi les a' on en connait un c'est le a qui se trouve à batch[i][1] et il va falloir calculer son théorical output
                 if abs(rk) >= 1: #Etat final 
                     thAk = rk #On calcule l'output théorique
                 else:
-                    maxk = max(sess.run(Predicted_y, {Input_X:[ssk], keep_prob:1})[-1]) #TODO: autre reseau
+                    maxk = max(sess.run(Predicted_y, {Input_X:[ssk]})[-1]) #TODO: autre reseau
                     thAk = rk + gamma*maxk #On calcule l'output théorique
                 thOutput[k][A.index(ak)] = thAk #On le place au bon endroit !!!!!
             if len(batch)!=0:
-                sess.run(Optimizer, {Input_X: inputs, Input_Y: thOutput, keep_prob:dropout_prob}) #TODO: autre reseau
+                sess.run(Optimizer, {Input_X: inputs, Input_Y: thOutput}) #TODO: autre reseau
             s = ss
         scores.append(score)
         score = 0
-    #return(sess.run(Weights_0),sess.run(Bias_0),sess.run(Weights_1),sess.run(Bias_1),sess.run(Weights_2),sess.run(Bias_2))
     return("fi")
 
 
@@ -244,42 +214,6 @@ def init_game():
 
 def observ_process(observation, obs = [0,0,0,0]): #crops the image and creates feature vector
     return observation
-    # observationR=[[0 for k in range(len(observation[0]))] for l in range(34,len(observation)-15)]
-    # for k in range(34,len(observation)-15):    
-    #     for l in range(len(observation[0])):
-    #         observationR[k-34][l]=observation[k][l][0]
-    # c = observationR
-    # d = np.array(c).T
-    # n = len(d)
-    # m = len(d[0])
-    # dd = np.array([[0 for j in range(m-1)] for i in range(n)])
-    # for i in range(n):
-    #     dd[i] = d[i][0:m-1]
-    # m = len(dd[0])
-    # n = len(dd)
-    # d18 = np.array([dd[18][m-i-1] for i in range(m)])
-    # e4 = m - dd[18].argmax()
-    # e3 = d18.argmax()
-    # d140 = np.array([dd[140][m-i-1] for i in range(m)])
-    # e2 = m - dd[140].argmin()
-    # e1 = d140.argmin()
-    # uf = True
-    # e5 = 0
-    # e6 = 0
-    # for i in range(20,140):
-    #     if dd[i].max() != 144 and uf :
-    #         e6 = m - dd[i].argmax()
-    #         e5 = 160 - i
-    #         uf = False
-    # e7 = obs[4]
-    # e8 = obs[5]
-    # e1 = e1/m-0.5
-    # e2 = e2/m-0.5
-    # e3 = e3/m-0.5
-    # e4 = e4/m-0.5
-    # e5 = e5/m-0.5
-    # e6 = e6/m-0.5
-    # return [e1,e2,e3,e4,e5,e6,e7,e8]
 
 def traite(etat,done,reward, score):
     # time.sleep(0.01)
@@ -290,22 +224,6 @@ def traite(etat,done,reward, score):
         with open('scores.txt', 'a') as file:
             file.write(('\n' + str(score))) 
         env.reset()
-    # if etat[4] == -0.5 and etat[5] == -0.5 :
-    #     toobs, reward, done, info = env.step(0)
-    #     #env.render()
-    #     if done :
-    #         env.reset()
-    #     if reward != 0 :
-    #         reward_global=reward
-    #     observation, reward, done, info = env.step(1)
-    #     #env.render()
-    #     if done :
-    #         env.reset()
-    #     if reward != 0 :
-    #         reward_global=reward
-    #     obs = observ_process(toobs,toobs)
-    #     etat = observ_process(observation,obs)
-    #     return traite(etat,done,reward)
     elif reward != 0 :
         toobs, reward, done, info = env.step(0)
         #env.render()
@@ -324,17 +242,17 @@ def traite(etat,done,reward, score):
 
 
 #%% entrainement
-def deep_pong(state0,it):
+def deep_game(state0,it):
     A = [A_left,A_right]
     s0 = state0
     memoire = 1000
-    deepQlearning2(A,s0,R,chooseDeepPong,memoire,it)
+    deepQlearning2(A,s0,R,chooseDeep,memoire,it)
     return('ni')
 
 #%% partie a executer
 state0 = init_game()
 print(state0)
-deep_pong(state0,30000)
+deep_game(state0,30000)
 saver.save(sess, 'my_test_model')
 
 #%% test une fois entrainé (NON UTILISE)
@@ -369,18 +287,3 @@ def test(sess):
     return lss
                 
 
-
-#
-#
-#
-#    
-## for _ in range(1000):
-##     if rd.randint(1,2)==1:
-##         A_left(observation, reward, done, info)
-##         print("up")
-##     else:
-##         A_right(observation, reward, done, info)
-##         print("down")
-#
-#env.reset()
-#env.close()

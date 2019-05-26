@@ -18,7 +18,7 @@ Num_classes = 8
 Num_output = 2
 Num_layers_0 = 32
 Num_layers_1 = 32
-starter_learning_rate = 0.001
+starter_learning_rate = 0.003
 dropout_prob = 0.5
 
 # Placeholders for the input data
