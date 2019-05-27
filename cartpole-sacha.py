@@ -56,69 +56,49 @@ Accuracy = 1-Loss
 
 saver=tf.train.Saver()
 
+sess.run(tf.global_variables_initializer())
+
 #%% Q learning
 # env = gym.make('Pong-v0' if len(sys.argv)<2 else sys.argv[1])
 env = gym.make('CartPole-v1')
+writebool = False
 
-
-reward_global = 0.0
-
-reward_survie = 0.0 #DLC Survie
-
-reward_total = 0.0 
+score=0
 
 def R(p):
+    global score
     #return reward_global #à décomenter sans DLC
-    return reward_total #DLC survie 
+    return bool(score)*2-1 #DLC survie 
 
-def A_left(obs, score):
+def A_left(obs):
     observation, reward, done, info = env.step(0)
-    env.render()
-    global reward_global
-    global reward_survie #DLC Survie
-    global reward_total #DLC Survie
-    reward_survie = reward_survie + 1 #DLC Survie
-    reward_global=reward
-    etat = observ_process(observation,obs)
-    res = traite(etat,done,reward, score)
-    if reward_global < 0: #DLC Survie
-        reward_survie = 0  #DLC Survie
-        print("reset survie")
-    reward_total = reward_global+ 0.8/(1+np.exp((250-reward_survie)/50))  #DLC Survie
-    return  res
+    global score
+    traite(done)
+    if score==0: #DLC Survie
+    return  observation
     
-def A_right(obs, score):
+def A_right(obs):
     observation, reward, done, info = env.step(1)
-    env.render()
-    global reward_global
-    global reward_survie #DLC Survie
-    global reward_total #DLC Survie
-    reward_survie = reward_survie + 1 #DLC Survie
-    reward_global=reward
-    etat = observ_process(observation,obs)
-    res = traite(etat,done,reward, score) 
-    if reward_global < 0: #DLC Survie
-        reward_survie = 0  #DLC Survie
-        print("reset survie")
-    reward_total = reward_global+ 0.8/(1+np.exp((250-reward_survie)/50))  #DLC Survie
-    return res
-
+    global score
+    traite(done)
+    if score==0: #DLC Survie
+    return  observation
+    
 
  
-def modify_exp(it,it_max):
+def exploration_exp(it,it_max):
     return 0.6*np.exp(-3*it/it_max)+0.2
 
+def exploration_lin(it,it_max):
+    return 1-it/it_max
 
 def chooseDeep(p,A,opt,sess):
     r = np.random.rand()
     if r < opt :
-        rr = np.random.randint(len(A)-1)
+        rr = np.random.randint(len(A))
         return A[rr]
-    else:
-        fp = sess.run(Predicted_y, {Input_X: [p]})
-        res = fp.argmax()
-    return A[res]
-
+    fp = sess.run(Predicted_y, {Input_X: [p]})
+    return A[fp.argmax()]
 
 
 def sample(D):
@@ -127,35 +107,33 @@ def sample(D):
         elt = D[np.random.randint(len(D))]
         if elt != []:
             res.append(elt)
-    return res
-            
-        
-
+    return res           
 
 #
 #%% fonction principale
 
-def deepQlearning2(A,s0,R,choose,memoire,it,gamma = 0.5):
-    scores = []
-    inputs = s0 #A voir  --> Implementation ATARI pour s0
-    sess.run(tf.global_variables_initializer())
+def deepQlearning2(A,R,choose,memoire,it,gamma = 0.995):
+    global writebool
+    memorymark=0
     D = [[] for i in range(memoire)]
     for i in range(it):
         print(" ")
-        opt=modify_exp(i,it)
+        opt=exploration_lin(i,it)
         print("Partie numéro: "+  str(i))
         print("exploration: "+str(round(opt,4)))
-        score = 0
-        lAS = [s0]
+        env.reset()
+        s0=init_game()
         s = s0
-        r = 0
-        while np.abs(r) < 0.9 : # Etat final
-            a = choose(s,A,opt,sess) #Modify permet de faire evoluer opt par exemple si opt = epsilon on peut le faire décroitre... 
-            ss = a(s, score) #ici on fait l'action --> implementation ATARI
-            lAS = lAS + [a,ss]
+        r = R(s)
+        #training game
+        writebool = False
+        while r>0  : # Etat final
+            a = choose(s,A,opt,sess)# choix de l'action. 
+            ss = a(s) #ici on fait l'action --> implementation ATARI
             r = R(ss)
-            if [] in D:
-                D[D.index([])]=np.array([s,a,r,ss])#si la mémoire n'est pas pleine, on ajoute en mémoire
+            if memorymark<memoire:
+                D[memorymark]=np.array([s,a,r,ss])#si la mémoire n'est pas pleine, on ajoute en mémoire
+                memorymark+=1
             else:
                 D[np.random.randint(len(D)-1)] = np.array([s,a,r,ss])#si elle est pleine on remplace aléatoirement
             batch = sample(D) #On eslectione des arcs pour apprendre
@@ -180,110 +158,62 @@ def deepQlearning2(A,s0,R,choose,memoire,it,gamma = 0.5):
             if len(batch)!=0:
                 sess.run(Optimizer, {Input_X: inputs, Input_Y: thOutput}) #TODO: autre reseau
             s = ss
-        scores.append(score)
-        score = 0
+        #test game
+        env.reset()
+        s0=init_game()
+        s=s0
+        r=R(s)
+        opt=0
+        writebool = True
+        print("test run:")
+        while r>0  : # Etat final
+            a = choose(s,A,opt,sess) # choix de l'action
+            ss = a(s) #ici on fait l'action --> implementation ATARI
+            r = R(ss)
+            s = ss
     return("fi")
 
 
 
 #%% gym et pretraitement
 
-render = True
+render = False
 env = gym.make('CartPole-v1')
 env.reset()
 # if render: env.render()
 
-reward_global = 0.0
-
-reward_survie = 0.0 #DLC Survie
-
-reward_total = 0.0
-
-
 def init_game():
 #Initialisation du jeu : les 20 premières frames ne servent à rien
-    for _ in range(1):
-        # if render: env.render()
-        observation, reward, done, info = env.step(0) # take no action (0 is up, 1 is down)
-    #     
-    # env.reset()
-    # env.close()
-    pre = observ_process(observation)
-    state0 = observ_process(observation,pre)
+    observation, reward, done, info = env.step(0) # take no action (0 is left, 1 is right)     
+    traite(done)
+    state0 = observation
     return state0
 
-def observ_process(observation, obs = [0,0,0,0]): #crops the image and creates feature vector
-    return observation
 
-def traite(etat,done,reward, score):
+def traite(done): #décide si il faut sauvegarder les résultats, augmente le score
     # time.sleep(0.01)
-    global reward_global
+    global score
     score += 1
     if done :
-        print("score:", score)
-        with open('scores.txt', 'a') as file:
-            file.write(('\n' + str(score))) 
-        env.reset()
-    elif reward != 0 :
-        toobs, reward, done, info = env.step(0)
-        #env.render()
-        if done :
-            env.reset()
-        observation, reward, done, info = env.step(1)
-        #env.render()
-        if done :
-            env.reset()
-        obs = observ_process(toobs,toobs)  
-        etat = observ_process(observation,obs)
-        return traite(etat,done,reward, score)
-    else:
-        return etat
-
+        print("score final:",score)
+        if writebool:
+            with open('scores.txt', 'a') as file:
+                file.write(('\n' + str(score))) 
+        score=0
+    return None
 
 
 #%% entrainement
 def deep_game(state0,it):
     A = [A_left,A_right]
-    s0 = state0
-    memoire = 1000
-    deepQlearning2(A,s0,R,chooseDeep,memoire,it)
+    memoire = 10000
+    deepQlearning2(A,R,chooseDeep,memoire,it)
     return('ni')
 
 #%% partie a executer
 state0 = init_game()
 print(state0)
-deep_game(state0,30000)
+deep_game(state0,50000)
 saver.save(sess, 'my_test_model')
 
-#%% test une fois entrainé (NON UTILISE)
-    
-def frontprop_deep(A,s0,choose,opt,sess): 
-    s = s0
-    lS = [s0]
-    lA = []
-    rs = 0 
-    while rs == 0: 
-        mouvs = A
-        #mouvs = []
-        #for a in A: #Cette étape peut rallonger fortement le programme il faudra réflechir à l'enlever 
-        #    if a(R,Q,A,s) != -1:
-        #        mouvs.append(a)
-        aa = choose(s,mouvs,opt,sess)
-        lA.append(aa)
-        s = aa(s)
-        lS.append(s)
-        try:
-            rs = R(s)
-        except KeyError:
-            rs = 0
-    return [lS,lA]
-
-def test(sess):
-    A = [A_left,A_right]
-    lss=[]
-    for i in range(50):
-        state0=init_game()
-        lss.append(frontprop_deep(A,state0,chooseDeepPong,0,sess)[0][-1])
-    return lss
-                
 
